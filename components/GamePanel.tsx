@@ -681,7 +681,19 @@ export default function GamePanel({
       </div>}
 
       {showFinished&&<RoundResult
-        text={lastEvent??("Le croupier termine à "+(dealerValue??"?")+".")}
+        text={
+          myHand?.outcome==="BUST"
+            ?`Bust : tu perds ${fmt(myHand.bet)} Ryôs.`
+            :myHand?.outcome==="LOSS"
+              ?`Défaite : tu perds ${fmt(myHand.bet)} Ryôs.`
+              :myHand?.outcome==="PUSH"
+                ?`Égalité : ta mise de ${fmt(myHand.bet)} Ryôs est rendue.`
+                :myHand?.outcome==="BLACKJACK"
+                  ?`Blackjack : +${fmt(Math.max(0,myHand.net??0))} Ryôs net.`
+                  :myHand?.outcome==="WIN"
+                    ?`Victoire : +${fmt(Math.max(0,myHand.net??0))} Ryôs net.`
+                    :lastEvent??("Le croupier termine à "+(dealerValue??"?")+".")
+        }
         onClose={()=>setDismissedResult(game.id)}
       />}
     </section>;
