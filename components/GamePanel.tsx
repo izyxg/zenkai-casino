@@ -114,7 +114,7 @@ export default function GamePanel({
     return <section className="gameStage lobbyStage">
       <div className="stageAmbient"/>
       <div className="lobbyTable">
-        <div className="tableMonogram">Z</div>
+        <div className="tableMonogram">C</div>
         <div className="lobbyKicker">TABLE EN ATTENTE</div>
         <h2>{blackjack?"Préparez les mises":poker?"Préparez la main":"Préparez le duel"}</h2>
         <p>
@@ -317,12 +317,12 @@ export default function GamePanel({
     return <section className="gameStage blackjackStage">
       <div className="stageAmbient"/>
       {(dealerMotion||playerMotion)&&<div key={motionEvt.id} className={"dealMotion "+(dealerMotion?"toDealer":"toPlayer")}>
-        <div className="motionCard">Z</div>
+        <div className="motionCard">C</div>
       </div>}
 
       <div className="felt blackjackFelt">
         <div className="feltBorder"/>
-        <div className="tableBranding"><span>ZENKAI</span><b>BLACKJACK</b><small>LA BANQUE TIRE À 16 • RESTE À 17</small></div>
+        <div className="tableBranding"><span>LE CERCLE DU RYÔ</span><b>BLACKJACK</b><small>LA BANQUE TIRE À 16 • RESTE À 17</small></div>
 
         <div key={lastEvt?.id??"dealer"} className={"dealerFigure "+(s.dealerPhase==="DEALER"?"awake":showFinished?"reveal":"")}>
           <div className="dealerHead"/>
@@ -461,7 +461,7 @@ export default function GamePanel({
           })}
         </div>
 
-        <div className="pokerMonogram">Z</div>
+        <div className="pokerMonogram">C</div>
       </div>
 
       {s.winners?.length>0&&<div className="winnerBanner">
