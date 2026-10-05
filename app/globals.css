@@ -815,3 +815,11 @@ button:disabled{cursor:not-allowed}
   55%{transform:translate(-18px,-7px) rotate(-13deg)}
   100%{transform:translate(-7px,-2px) rotate(-5deg)}
 }
+
+.fieldHint{
+  margin-top:-1px;
+  color:#756b5c;
+  font-size:8px;
+  line-height:1.45;
+  letter-spacing:.02em;
+}
