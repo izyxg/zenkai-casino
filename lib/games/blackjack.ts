@@ -12,7 +12,11 @@ export async function newBlackjackState(room:any):Promise<BlackjackState>{
     if(dealerMode==="HOST"&&p.isHost) return false;
     return p.currentBet>=room.minBet&&p.currentBet<=room.maxBet&&p.balance>=p.currentBet;
   });
-  if(!eligible.length) throw new Error(dealerMode==="HOST"?"Au moins un joueur doit miser pour jouer contre le croupier":"Au moins un joueur doit définir une mise valide");
+  if(!eligible.length){
+    throw new Error(dealerMode==="HOST"
+      ?"Au moins un joueur doit confirmer une mise avant de lancer"
+      :"Au moins un joueur doit confirmer une mise valide avant de lancer");
+  }
 
   const deck=shuffle(freshDeck());
   const hands:BlackjackState["hands"]={};
@@ -52,8 +56,12 @@ export async function newBlackjackState(room:any):Promise<BlackjackState>{
 }
 
 export async function settleBlackjack(game:any,state:BlackjackState,autoDraw=true){
+  let dealerDraws=0;
   if(autoDraw){
-    while(blackjackValue(state.dealer)<17) state.dealer.push(state.deck.pop()!);
+    while(blackjackValue(state.dealer)<17){
+      state.dealer.push(state.deck.pop()!);
+      dealerDraws++;
+    }
   }
 
   const dv=blackjackValue(state.dealer);
@@ -93,36 +101,66 @@ export async function settleBlackjack(game:any,state:BlackjackState,autoDraw=tru
     data:{state:state as any,status:"FINISHED",endedAt:new Date()}
   });
   await prisma.room.update({where:{id:game.roomId},data:{status:"LOBBY"}});
-  await logEvent(game.roomId,"BLACKJACK_RESULT",`Le croupier termine à ${dv}${dealerBust?" (bust)":""}.`,game.id);
+
+  if(dealerDraws>0){
+    await logEvent(
+      game.roomId,
+      "BLACKJACK_DEALER",
+      `Le croupier révèle sa main et tire ${dealerDraws} carte${dealerDraws>1?"s":""}.`,
+      game.id
+    );
+  }else{
+    await logEvent(game.roomId,"BLACKJACK_DEALER","Le croupier révèle sa main.",game.id);
+  }
+  await logEvent(
+    game.roomId,
+    "BLACKJACK_RESULT",
+    `Le croupier termine à ${dv}${dealerBust?" et saute":""}.`,
+    game.id
+  );
 }
 
 export async function blackjackAction(gameId:string,playerId:string,action:"HIT"|"STAND"|"DOUBLE"){
   const game=await prisma.game.findUniqueOrThrow({where:{id:gameId}});
   const state=game.state as unknown as BlackjackState;
 
-  if(state.kind!=="BLACKJACK"||state.settled) throw new Error("Partie terminée");
+  if(state.kind!=="BLACKJACK"||state.settled) throw new Error("La manche est déjà terminée");
   if(state.dealerPhase!=="PLAYERS") throw new Error("Le tour des joueurs est terminé");
-  if(state.order[state.turnIndex]!==playerId) throw new Error("Ce n'est pas votre tour");
+  if(state.order[state.turnIndex]!==playerId) throw new Error("Attends ton tour");
 
   const h=state.hands[playerId];
-  if(!h||h.status!=="PLAYING") throw new Error("Main inactive");
+  if(!h||h.status!=="PLAYING") throw new Error("Ta main n'est plus active");
+  const player=await prisma.player.findUniqueOrThrow({where:{id:playerId}});
+
+  let eventMessage="";
 
   if(action==="HIT"){
     h.cards.push(state.deck.pop()!);
-    if(blackjackValue(h.cards)>21) h.status="BUST";
+    const value=blackjackValue(h.cards);
+    if(value>21) h.status="BUST";
+    eventMessage=value>21
+      ?`${player.name} tire une carte et dépasse 21.`
+      :`${player.name} tire une carte.`;
   }
 
-  if(action==="STAND") h.status="STAND";
+  if(action==="STAND"){
+    h.status="STAND";
+    eventMessage=`${player.name} reste à ${blackjackValue(h.cards)}.`;
+  }
 
   if(action==="DOUBLE"){
-    if(h.cards.length!==2) throw new Error("Double uniquement sur les deux premières cartes");
-    const p=await prisma.player.findUniqueOrThrow({where:{id:playerId}});
-    if(p.balance<h.bet) throw new Error("Solde insuffisant pour doubler");
+    if(h.cards.length!==2) throw new Error("Tu peux doubler uniquement avec tes 2 premières cartes");
+    if(player.balance<h.bet) throw new Error("Solde insuffisant pour doubler");
     await changeBalance(game.roomId,playerId,-h.bet,"BET","Double Blackjack");
     h.bet*=2;
     h.doubled=true;
     h.cards.push(state.deck.pop()!);
     h.status=blackjackValue(h.cards)>21?"BUST":"STAND";
+    eventMessage=`${player.name} double sa mise à ${h.bet} Ryôs et tire une dernière carte.`;
+  }
+
+  if(eventMessage){
+    await logEvent(game.roomId,"BLACKJACK_ACTION",eventMessage,game.id);
   }
 
   if(h.status!=="PLAYING") state.turnIndex++;
@@ -136,7 +174,7 @@ export async function blackjackAction(gameId:string,playerId:string,action:"HIT"
     }
     state.dealerPhase="DEALER";
     await prisma.game.update({where:{id:game.id},data:{state:state as any}});
-    await logEvent(game.roomId,"BLACKJACK_DEALER","Tous les joueurs ont terminé. Le croupier prend la main.",game.id);
+    await logEvent(game.roomId,"BLACKJACK_DEALER","Tous les joueurs ont fini. Le croupier prend la main.",game.id);
     return;
   }
 
@@ -147,27 +185,38 @@ export async function blackjackDealerAction(gameId:string,playerId:string,action
   const game=await prisma.game.findUniqueOrThrow({where:{id:gameId}});
   const state=game.state as unknown as BlackjackState;
 
-  if(state.kind!=="BLACKJACK"||state.settled) throw new Error("Partie terminée");
+  if(state.kind!=="BLACKJACK"||state.settled) throw new Error("La manche est déjà terminée");
   if(state.dealerMode!=="HOST"||state.dealerPlayerId!==playerId) throw new Error("Action réservée au croupier");
-  if(state.dealerPhase!=="DEALER") throw new Error("Les joueurs n'ont pas encore terminé");
+  if(state.dealerPhase!=="DEALER") throw new Error("Attends que tous les joueurs aient terminé");
 
   if(action==="REVEAL"){
     if(state.dealerRevealed) throw new Error("La carte cachée est déjà révélée");
     state.dealerRevealed=true;
     await prisma.game.update({where:{id:game.id},data:{state:state as any}});
-    await logEvent(game.roomId,"BLACKJACK_DEALER","Le croupier révèle sa main.",game.id);
+    await logEvent(
+      game.roomId,
+      "BLACKJACK_DEALER",
+      `Le croupier révèle sa main : ${blackjackValue(state.dealer)}.`,
+      game.id
+    );
     return;
   }
 
-  if(!state.dealerRevealed) throw new Error("Révélez d'abord la carte cachée");
+  if(!state.dealerRevealed) throw new Error("Révèle d'abord la carte cachée");
 
   const value=blackjackValue(state.dealer);
 
   if(action==="DRAW"){
     if(value>=17) throw new Error("À 17 ou plus, le croupier doit rester");
     state.dealer.push(state.deck.pop()!);
+    const nextValue=blackjackValue(state.dealer);
     await prisma.game.update({where:{id:game.id},data:{state:state as any}});
-    await logEvent(game.roomId,"BLACKJACK_DEALER","Le croupier tire une carte.",game.id);
+    await logEvent(
+      game.roomId,
+      "BLACKJACK_DEALER",
+      `Le croupier tire une carte et passe à ${nextValue}.`,
+      game.id
+    );
     return;
   }
 
