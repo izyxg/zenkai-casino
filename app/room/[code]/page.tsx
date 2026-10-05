@@ -97,7 +97,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
 
   if(!snap||!me){
     return <main className="roomPage loadingRoom">
-      <div className="loadingSeal">Z</div>
+      <div className="loadingSeal">C</div>
       <b>Ouverture de la table…</b>
       <span>Connexion à la maison de jeu</span>
       {error&&<div className="errorToast"><span>!</span>{error}</div>}
@@ -112,8 +112,8 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
     <div className="roomBackdrop"/>
     <header className="roomHeader">
       <div className="roomBrand">
-        <a href="/" className="logoMark">Z</a>
-        <div><span>ZENKAI CASINO</span><b>{gameName}</b></div>
+        <a href="/" className="logoMark">C</a>
+        <div><span>LE CERCLE DU RYÔ</span><b>{gameName}</b></div>
       </div>
 
       <div className="roomIdentity">
