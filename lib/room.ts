@@ -50,6 +50,7 @@ export async function roomSnapshot(code:string, viewerId:string){
     }:null,
     events:room.events.reverse().map(e=>({
       id:e.id,
+      gameId:e.gameId,
       type:e.type,
       message:e.message,
       createdAt:e.createdAt
