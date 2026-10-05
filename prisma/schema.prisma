@@ -35,6 +35,7 @@ model Room {
   maxPlayers          Int
   startingBalance     Int
   blackjackDealerMode String      @default("AUTO")
+  blackjackAutoStartAt DateTime?
   locked              Boolean     @default(false)
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
