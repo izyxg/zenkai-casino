@@ -1534,3 +1534,165 @@ button:disabled{cursor:not-allowed}
   .chipRackRow{gap:1px;flex-wrap:wrap}.rackChip{width:34px;height:34px}.rackChipButton{margin:0 -1px}
   .confirmBetButton span{font-size:8px}.confirmBetButton small{font-size:5.5px}
 }
+
+
+/* dealer choice at room creation */
+.dealerCreateChoice{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+}
+.dealerCreateChoice label{
+  position:relative;
+  display:block;
+  cursor:pointer;
+}
+.dealerCreateChoice input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+.dealerCreateChoice label>span{
+  min-height:78px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:5px;
+  padding:13px 14px;
+  border:1px solid #34291d;
+  border-radius:13px;
+  background:#0f0d0a;
+  transition:border-color .18s,background .18s,box-shadow .18s,transform .18s;
+}
+.dealerCreateChoice label:hover>span{
+  transform:translateY(-1px);
+  border-color:#5e482b;
+}
+.dealerCreateChoice input:checked+span{
+  border-color:#9f7740;
+  background:linear-gradient(145deg,rgba(65,46,24,.72),#100d09);
+  box-shadow:0 0 0 2px rgba(215,173,91,.06),inset 0 1px rgba(255,255,255,.02);
+}
+.dealerCreateChoice b{
+  font:500 14px Georgia,serif;
+  color:#ead3a0;
+}
+.dealerCreateChoice small{
+  font-size:8px;
+  line-height:1.45;
+  color:#7e7261;
+}
+
+/* manual blackjack launch — replaces countdown system */
+.manualDealStatus{
+  min-width:165px;
+  display:grid;
+  grid-template-columns:auto auto;
+  grid-template-rows:auto auto;
+  align-items:center;
+  column-gap:7px;
+  padding-left:15px;
+  border-left:1px solid var(--line);
+}
+.manualDealStatus span{
+  grid-column:1/3;
+  font-size:5.5px;
+  letter-spacing:.16em;
+  color:#81745f;
+}
+.manualDealStatus b{
+  font:500 24px Georgia,serif;
+  color:#9b855d;
+  line-height:1;
+}
+.manualDealStatus small{
+  font-size:7px;
+  color:#796d5c;
+  align-self:end;
+  padding-bottom:3px;
+}
+.manualDealStatus.ready b{color:#ecc96f}
+.manualDealStatus.ready span{color:#9bc9a7}
+
+.bettingLaunchColumn{
+  min-width:0;
+  display:grid;
+  grid-template-rows:1fr;
+  gap:6px;
+}
+.bettingLaunchColumn:has(.manualDealButton){
+  grid-template-rows:1fr 1fr;
+}
+.bettingLaunchColumn .confirmBetButton{
+  min-height:0;
+}
+.manualDealButton{
+  min-height:58px;
+  border:1px solid #bc934f;
+  border-radius:13px;
+  background:
+    radial-gradient(circle at 22% 0,rgba(255,233,181,.16),transparent 35%),
+    linear-gradient(180deg,#342414,#17100a);
+  color:#f0d28e;
+  cursor:pointer;
+  display:grid;
+  grid-template-columns:36px 1fr;
+  grid-template-rows:1fr 1fr;
+  align-items:center;
+  column-gap:8px;
+  padding:8px 10px;
+  text-align:left;
+  box-shadow:0 9px 25px rgba(0,0,0,.28);
+  transition:transform .18s,border-color .18s,filter .18s,box-shadow .18s;
+}
+.manualDealButton:hover:not(:disabled){
+  transform:translateY(-2px);
+  border-color:#e4bd70;
+  filter:brightness(1.06);
+  box-shadow:0 12px 30px rgba(0,0,0,.35),0 0 24px rgba(202,150,62,.11);
+}
+.manualDealButton:disabled{
+  opacity:.34;
+  cursor:not-allowed;
+}
+.manualDealButton>span{
+  grid-row:1/3;
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(145deg,#d8ad5a,#9e6c2c);
+  color:#160f08;
+  font:700 18px Georgia,serif;
+}
+.manualDealButton b{
+  align-self:end;
+  font-size:9px;
+  letter-spacing:.1em;
+}
+.manualDealButton small{
+  align-self:start;
+  margin-top:2px;
+  font-size:6px;
+  color:#9a8767;
+}
+.manualDealButton.dealerLaunch{
+  grid-column:5;
+}
+.dealerWaitingConsole+.dealerLaunch{
+  align-self:stretch;
+}
+
+@media(max-width:900px){
+  .dealerCreateChoice{grid-template-columns:1fr}
+  .bettingLaunchColumn{grid-column:2/4;grid-row:3}
+  .bettingLaunchColumn:has(.manualDealButton){grid-template-columns:1fr 1fr;grid-template-rows:1fr}
+  .manualDealButton.dealerLaunch{grid-column:1/4;grid-row:3}
+}
+@media(max-width:560px){
+  .bettingLaunchColumn:has(.manualDealButton){
+    grid-template-columns:1fr;
+    grid-template-rows:1fr 1fr;
+  }
+}
