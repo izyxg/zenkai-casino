@@ -65,15 +65,15 @@ export default function Home(){
     <div className="landingNoise"/>
     <nav className="landingNav">
       <a className="logoLockup" href="#">
-        <span className="logoMark">Z</span>
-      <span><b>ZENKAI</b><small>CASINO</small></span>
+        <span className="logoMark">C</span>
+      <span><b>LE CERCLE</b><small>DU RYÔ</small></span>
       </a>
       <div className="navStatus"><i/> Maison de jeu RP • Ryôs fictifs</div>
     </nav>
 
     <section className="landingHero">
       <div className="heroCopy">
-        <div className="eyebrow">MAISON DE JEU CLANDESTINE</div>
+        <div className="eyebrow">LE CERCLE DU RYÔ • MAISON DE JEU PRIVÉE</div>
         <h1>Le désert<br/><em>ne rembourse personne.</em></h1>
         <p>Tables privées, parties entre joueurs et ambiance de maison de jeu pensée pour le RP. Ici, chaque mise existe uniquement en Ryôs fictifs.</p>
         <div className="heroActions">
@@ -91,7 +91,7 @@ export default function Home(){
         <div className="heroHalo"/>
         <div className="previewTable">
           <div className="previewEdge"/>
-          <div className="previewLogo">Z</div>
+          <div className="previewLogo">C</div>
           <div className="previewDealer"><span>♣</span><small>CROUPIER</small></div>
           <div className="previewCards">
             <div className="fakeCard"><b>A</b><span>♠</span></div>
@@ -207,7 +207,7 @@ export default function Home(){
     </section>
 
     <footer className="landingFooter">
-      <div className="logoLockup"><span className="logoMark">Z</span><span><b>ZENKAI</b><small>CASINO</small></span></div>
+      <div className="logoLockup"><span className="logoMark">C</span><span><b>LE CERCLE</b><small>DU RYÔ</small></span></div>
       <p>Outil de roleplay non officiel. Aucun dépôt, aucun retrait, aucun argent réel.</p>
     </footer>
   </main>;
