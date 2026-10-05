@@ -1,4 +1,4 @@
-" use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { CardView } from "./CardView";
@@ -114,7 +114,7 @@ export default function GamePanel({
               <button onClick={()=>setBet(Math.min(snap.maxBet,me.balance,bet+snap.minBet))}>+</button>
             </div>
             <div className="quickBets">
-              {[snap.minBet,Math.round((snap.minBet+snap.maxBet)/2),snap.maxBet].map((v number)=>
+              {[snap.minBet,Math.round((snap.minBet+snap.maxBet)/2),snap.maxBet].map((v:number)=>
                 <button key={v} onClick={()=>setBet(Math.min(v,me.balance))}>{fmt(v)}</button>
               )}
             </div>
@@ -157,13 +157,13 @@ export default function GamePanel({
       <div className="coinDuel">
         <div className="coinPlayer left">
           <PlayerSeat player={players[0]} isMe={players[0]?.id===me.id} bet={s.commits?.[players[0]?.id]?.bet}/>
-          {s.result&&<div className="choiceReveal">{s.commits?.[players[0]?.id]?.choice??"—"</div>}
+          {s.result&&<div className="choiceReveal">{s.commits?.[players[0]?.id]?.choice??"—"}</div>}
         </div>
 
         <div className="coinArena">
           <span className="roundEyebrow">PILE OU FACE</span>
-          <div className=x`coin3d ${s.result?"landed":""}`>
-<div className="coinFace">{s.result??"RYÔ"</div>
+          <div className={`coin3d ${s.result?"landed":""}`}>
+<div className="coinFace">{s.result??"RYÔ"}</div>
           </div>
           {s.result
             ?<div className="resultCall"><b>{s.result}</b><span>{winner?.name??"un joueur"} remporte la manche</span></div>
@@ -189,12 +189,12 @@ export default function GamePanel({
   }
 
   if(s.kind==="BLACKJACK"){
-    const dealerPlayer=s.idealerMode==="HOST"?snap.players.find((p:any)=>p.id===s.dealerPlayerId):undefined;
+    const dealerPlayer=s.dealerMode==="HOST"?snap.players.find((p:any)=>p.id===s.dealerPlayerId):undefined;
     const dealerValue=bjValue(s.dealer);
     const currentId=s.order?.[s.turnIndex];
     const isDealer=me.id===s.dealerPlayerId&&s.dealerMode==="HOST";
     const myHand=s.hands?.[me.id];
-    const is^MyTurn=currentId===me.id&&s.dealerPhase==="PLAYERS";
+    const isMyTurn=currentId===me.id&&s.dealerPhase==="PLAYERS";
     const tablePlayers=snap.players.filter((p:any)=>!(s.dealerMode==="HOST"&&p.id===s.dealerPlayerId));
 
     return <section className="gameStage blackjackStage">
@@ -249,7 +249,7 @@ export default function GamePanel({
           ?<button className="casinoBtn primary" onClick={()=>act("BLACKJACK_DEALER",{move:"REVEAL"})}>RÉVÉLER</button>
           :<>
             <button className="casinoBtn primary" disabled={(dealerValue??0)>=17} onClick={()=>act("BLACKJACK_DEALER",{move:"DRAW"})}>TIRER</button>
-            <button className="casinoBtn ivory" disabled={(dealerValue??0)<17} onClick={()=>act("BLACKJACK_DEALER",{move:"SETTLE"})}>RÉGLER LA TABLEL/button>
+            <button className="casinoBtn ivory" disabled={(dealerValue??0)<17} onClick={()=>act("BLACKJACK_DEALER",{move:"SETTLE"})}>RÉGLER LA TABLE</button>
           </>}
       </div>}
 
@@ -317,7 +317,7 @@ export default function GamePanel({
 
       {s.winners?.length>0&&<div className="winnerBanner">
         <span>GAGNANT</span>
-        <b>{s.winners.map((w any)=>`${snap.players.find((p:any)=>p.id===w.playerId)?.name}: +${fmt(w.amount)}`).join(" • ")}</b>
+        <b>{s.winners.map((w:any)=>`${snap.players.find((p:any)=>p.id===w.playerId)?.name}: +${fmt(w.amount)}`).join(" • ")}</b>
       </div>}
 
       {turn&&<div className="actionDock pokerActions">
