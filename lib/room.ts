@@ -32,6 +32,7 @@ export async function roomSnapshot(code:string, viewerId:string){
     maxPlayers:room.maxPlayers,
     startingBalance:room.startingBalance,
     blackjackDealerMode:room.blackjackDealerMode,
+    blackjackAutoStartAt:room.blackjackAutoStartAt,
     locked:room.locked,
     players:room.players.map(p=>({
       id:p.id,
