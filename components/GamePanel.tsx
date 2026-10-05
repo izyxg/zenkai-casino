@@ -93,7 +93,7 @@ export default function GamePanel({
           </div>
           <small>
             {snap.blackjackDealerMode==="HOST"
-              ?"Tu animes la table : révélation, tirage et règlement. Les r礧les restent verrouillées côté serveur."
+              ?"Tu animes la table : révélation, tirage et règlement. Les règles restent verrouillées côté serveur."
               :"Le serveur joue automatiquement la main du croupier."}
           </small>
         </div>}
