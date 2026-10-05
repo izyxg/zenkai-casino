@@ -7,7 +7,13 @@ export type CoinState = {
   winnerId?: string;
 };
 
-export type BlackjackHand = { cards: Card[]; bet:number; status:"PLAYING"|"STAND"|"BUST"|"BLACKJACK"|"DONE"; doubled?:boolean };
+export type BlackjackHand = {
+  cards: Card[];
+  bet:number;
+  status:"PLAYING"|"STAND"|"BUST"|"BLACKJACK"|"DONE";
+  doubled?:boolean;
+};
+
 export type BlackjackState = {
   kind:"BLACKJACK";
   deck:Card[];
@@ -15,6 +21,10 @@ export type BlackjackState = {
   hands:Record<string,BlackjackHand>;
   order:string[];
   turnIndex:number;
+  dealerMode:"AUTO"|"HOST";
+  dealerPlayerId?:string;
+  dealerPhase:"PLAYERS"|"DEALER"|"SETTLED";
+  dealerRevealed:boolean;
   settled?:boolean;
 };
 
