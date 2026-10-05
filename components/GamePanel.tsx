@@ -45,64 +45,119 @@ const ringPositions=[
   {left:"50%",top:"8%"}
 ];
 
+function RoundResult({text,onClose}:{text:string;onClose:()=>void}){
+  return <div className="roundResultBar">
+    <div><span>MANCHE TERMINÉE</span><b>{text}</b></div>
+    <button className="casinoBtn ghost" onClick={onClose}>PRÉPARER LA SUITE</button>
+  </div>;
+}
+
 export default function GamePanel({
   snap,
   me,
-  act
+  act,
+  busy=false
 }:{
   snap:any;
   me:any;
   act:(action:string,payload?:any)=>Promise<void>;
+  busy?:boolean;
 }){
   const game=snap.game;
   const [bet,setBet]=useState(me.currentBet||snap.minBet);
   const [raise,setRaise]=useState(snap.minBet*2);
+  const [dismissedResult,setDismissedResult]=useState<string|null>(null);
 
   useEffect(()=>{
     if(me.currentBet) setBet(me.currentBet);
   },[me.currentBet]);
 
-  const lastEvent=snap.events?.[snap.events.length-1]?.message;
+  useEffect(()=>{
+    const state=game?.state;
+    if(state?.kind!=="POKER") return;
+    const mine=state.seats?.find((x:any)=>x.playerId===me.id);
+    const min=Math.max(state.currentBet+state.minRaise,(mine?.roundBet??0)+1);
+    const max=(mine?.roundBet??0)+me.balance;
+    setRaise((value)=>Math.max(min,Math.min(value,max)));
+  },[game?.id,game?.state?.currentBet,game?.state?.minRaise,game?.state?.currentIndex,me.id,me.balance]);
 
-  if(!game||game.status!=="ACTIVE"){
-    const hostDealer=snap.gameType==="BLACKJACK"&&snap.blackjackDealerMode==="HOST";
-    const canBet=!(hostDealer&&me.isHost);
+  const lastEvt=snap.events?.[snap.events.length-1];
+  const lastEvent=lastEvt?.message;
+  const recentFinished=game?.status==="FINISHED"&&game?.endedAt&&Date.now()-new Date(game.endedAt).getTime()<20000;
+  const showFinished=!!recentFinished&&dismissedResult!==game?.id;
+
+  if(!game||(game.status!=="ACTIVE"&&!showFinished)){
+    const blackjack=snap.gameType==="BLACKJACK";
+    const poker=snap.gameType==="POKER";
+    const coin=snap.gameType==="COINFLIP";
+    const hostDealer=blackjack&&snap.blackjackDealerMode==="HOST";
+    const canBet=blackjack&&!(hostDealer&&me.isHost);
+
+    const blackjackEligible=snap.players.filter((p:any)=>{
+      if(hostDealer&&p.isHost) return false;
+      return p.currentBet>=snap.minBet&&p.currentBet<=snap.maxBet&&p.currentBet<=p.balance;
+    }).length;
+    const pokerEligible=snap.players.filter((p:any)=>p.balance>=snap.minBet).length;
+
+    const startReady=blackjack
+      ?blackjackEligible>0
+      :poker
+        ?pokerEligible>=2
+        :snap.players.length===2;
+
+    const startReason=blackjack
+      ?(startReady?blackjackEligible+" mise"+(blackjackEligible>1?"s":"")+" prête"+(blackjackEligible>1?"s":""):"Au moins 1 mise doit être confirmée")
+      :poker
+        ?(startReady?pokerEligible+" joueurs prêts":"Au moins 2 joueurs avec assez de Ryôs")
+        :(startReady?"Les 2 joueurs sont présents":"Il faut exactement 2 joueurs");
+
     return <section className="gameStage lobbyStage">
       <div className="stageAmbient"/>
       <div className="lobbyTable">
         <div className="tableMonogram">Z</div>
         <div className="lobbyKicker">TABLE EN ATTENTE</div>
-        <h2>Préparez la prochaine manche</h2>
-        <p>Choisis ta mise, rassemble les joueurs et laisse l'hôte ouvrir la table.</p>
+        <h2>{blackjack?"Préparez les mises":poker?"Préparez la main":"Préparez le duel"}</h2>
+        <p>
+          {blackjack
+            ?"Chaque joueur confirme sa mise avant que l'hôte ouvre la manche."
+            :poker
+              ?"Les blinds sont automatiques. Dès que 2 joueurs ont assez de Ryôs, l'hôte peut distribuer."
+              :"À deux joueurs, l'hôte ouvre le duel puis chacun choisit son camp."}
+        </p>
 
-        {snap.gameType==="BLACKJACK"&&me.isHost&&<div className="dealerModeBox">
-          <span className="controlLabel">Mode croupier</span>
+        {blackjack&&me.isHost&&<div className="dealerModeBox">
+          <span className="controlLabel">Qui tient la banque ?</span>
           <div className="segmented">
             <button
+              disabled={busy}
               className={snap.blackjackDealerMode==="AUTO"?"active":""}
               onClick={()=>act("SET_DEALER_MODE",{mode:"AUTO"})}
             >
-              Croupier automatique
+              Maison automatique
             </button>
             <button
+              disabled={busy}
               className={snap.blackjackDealerMode==="HOST"?"active":""}
               onClick={()=>act("SET_DEALER_MODE",{mode:"HOST"})}
             >
-              Je prends le croupier
+              Moi, croupier
             </button>
           </div>
           <small>
-            {snap.blackjackDealerMode==="HOST"
-              ?"Tu animes la table : révélation, tirage et règlement. Les règles restent verrouillées côté serveur."
-              :"Le serveur joue automatiquement la main du croupier."}
+            {hostDealer
+              ?"Tu ne mises pas : tu révèles, tires et règles la banque. Les cartes restent décidées par le serveur."
+              :"La maison révèle et joue sa main automatiquement après le dernier joueur."}
           </small>
         </div>}
 
         <div className="betDock">
-          {canBet?<div className="betComposer">
-            <span className="controlLabel">Ta mise</span>
+          {canBet&&<div className="betComposer">
+            <div className="betHeader">
+              <span className="controlLabel">Ta mise Blackjack</span>
+              {me.currentBet>=snap.minBet&&<span className="readyBadge">✓ {fmt(me.currentBet)} prêts</span>}
+            </div>
             <div className="betInputWrap">
-              <button onClick={()=>setBet(Math.max(snap.minBet,bet-snap.minBet))}>−</button>
+              <button disabled={busy} onClick={()=>setBet(Math.max(snap.minBet,bet-snap.minBet))}>−</button>
               <input
                 type="number"
                 value={bet}
@@ -111,25 +166,49 @@ export default function GamePanel({
                 onChange={e=>setBet(Number(e.target.value))}
               />
               <span>Ryôs</span>
-              <button onClick={()=>setBet(Math.min(snap.maxBet,me.balance,bet+snap.minBet))}>+</button>
+              <button disabled={busy} onClick={()=>setBet(Math.min(snap.maxBet,me.balance,bet+snap.minBet))}>+</button>
             </div>
             <div className="quickBets">
               {[snap.minBet,Math.round((snap.minBet+snap.maxBet)/2),snap.maxBet].map((v:number)=>
-                <button key={v} onClick={()=>setBet(Math.min(v,me.balance))}>{fmt(v)}</button>
+                <button disabled={busy} key={v} onClick={()=>setBet(Math.min(v,me.balance))}>{fmt(v)}</button>
               )}
             </div>
-            <button className="casinoBtn ghost" onClick={()=>act("SET_BET",{bet})}>
-              Confirmer {fmt(bet)} Ryôs
+            <button
+              disabled={busy||bet<snap.minBet||bet>snap.maxBet||bet>me.balance}
+              className="casinoBtn ghost"
+              onClick={()=>act("SET_BET",{bet})}
+            >
+              {me.currentBet===bet?"MISE CONFIRMÉE":"CONFIRMER "+fmt(bet)+" RYÔS"}
             </button>
-          </div>:<div className="dealerReady">
-            <div className="dealerIcon">♣</div>
-            <div><b>Tu es le croupier</b><span>Les autres joueurs préparent leurs mises.</span></div>
           </div>}
 
-          {me.isHost&&<button className="casinoBtn primary startBtn" onClick={()=>act("START_GAME")}>
-            <span>OUVRIR LA TABLE</span>
-            <small>Lancer la manche</small>
-          </button>}
+          {blackjack&&hostDealer&&me.isHost&&<div className="dealerReady">
+            <div className="dealerIcon">♣</div>
+            <div><b>Tu tiens le croupier</b><span>Les joueurs doivent confirmer leur mise.</span></div>
+          </div>}
+
+          {poker&&<div className="setupCard">
+            <span className="setupIcon">♠</span>
+            <div><b>Blinds automatiques</b><span>Petite blind {fmt(snap.minBet)} • grosse blind {fmt(Math.min(snap.maxBet,snap.minBet*2))}</span></div>
+          </div>}
+
+          {coin&&<div className="setupCard">
+            <span className="setupIcon">◐</span>
+            <div><b>Duel à deux</b><span>La mise et le côté se choisissent juste après l'ouverture.</span></div>
+          </div>}
+
+          {me.isHost
+            ?<button
+              className="casinoBtn primary startBtn"
+              disabled={busy||!startReady}
+              onClick={()=>act("START_GAME")}
+            >
+              <span>{blackjack?"DISTRIBUER":poker?"DISTRIBUER LES CARTES":"OUVRIR LE DUEL"}</span>
+              <small>{startReason}</small>
+            </button>
+            :<div className={"waitingHost "+(startReady?"ready":"")}>
+              <i/><div><b>{startReady?"Tout est prêt":"Préparation en cours"}</b><span>En attente de l'hôte</span></div>
+            </div>}
         </div>
 
         <div className="limitLine">
@@ -151,6 +230,10 @@ export default function GamePanel({
     const committed=s.commits?.[me.id];
     const players=snap.players.slice(0,2);
     const winner=s.winnerId?snap.players.find((p:any)=>p.id===s.winnerId):null;
+    const entries=Object.entries(s.commits??{}) as Array<[string,any]>;
+    const opponentCommit=entries.find(([id])=>id!==me.id)?.[1];
+    const forcedChoice=opponentCommit?(opponentCommit.choice==="PILE"?"FACE":"PILE"):null;
+    const requiredBet=opponentCommit?.bet??bet;
 
     return <section className="gameStage coinStage">
       <div className="stageAmbient"/>
@@ -162,12 +245,16 @@ export default function GamePanel({
 
         <div className="coinArena">
           <span className="roundEyebrow">PILE OU FACE</span>
-          <div className={`coin3d ${s.result?"landed":""}`}>
-<div className="coinFace">{s.result??"RYÔ"}</div>
+          <div className={"coin3d "+(s.result?"landed":"")}>
+            <div className="coinFace">{s.result??"RYÔ"}</div>
           </div>
           {s.result
-            ?<div className="resultCall"><b>{s.result}</b><span>{winner?.name??"un joueur"} remporte la manche</span></div>
-            :<div className="coinPrompt">{committed?"Choix verrouillé. On attend l'adversaire.":"Choisis ton camp et verrouille ta mise."}</div>}
+            ?<div className="resultCall"><b>{s.result}</b><span>{winner?.name??"Un joueur"} remporte la manche</span></div>
+            :committed
+              ?<div className="coinPrompt strong">Choix verrouillé. En attente de l'adversaire…</div>
+              :opponentCommit
+                ?<div className="coinPrompt strong">Ton adversaire a pris {opponentCommit.choice}. Tu dois prendre {forcedChoice} pour {fmt(requiredBet)} Ryôs.</div>
+                :<div className="coinPrompt">Choisis ton côté et fixe la mise du duel.</div>}
         </div>
 
         <div className="coinPlayer right">
@@ -178,13 +265,37 @@ export default function GamePanel({
 
       {!s.result&&!committed&&<div className="actionDock floating">
         <div className="dockBet">
-          <span>Mise</span>
-          <input type="number" value={bet} min={snap.minBet} max={snap.maxBet} onChange={e=>setBet(Number(e.target.value))}/>
+          <span>{opponentCommit?"Mise imposée":"Mise"}</span>
+          <input
+            type="number"
+            value={requiredBet}
+            disabled={!!opponentCommit}
+            min={snap.minBet}
+            max={snap.maxBet}
+            onChange={e=>setBet(Number(e.target.value))}
+          />
           <b>Ryôs</b>
         </div>
-        <button className="casinoBtn primary" onClick={()=>act("COIN_COMMIT",{bet,choice:"PILE"})}>PILE</button>
-        <button className="casinoBtn ivory" onClick={()=>act("COIN_COMMIT",{bet,choice:"FACE"})}>FACE</button>
+        <button
+          disabled={busy||(!!forcedChoice&&forcedChoice!=="PILE")}
+          className="casinoBtn primary"
+          onClick={()=>act("COIN_COMMIT",{bet:requiredBet,choice:"PILE"})}
+        >
+          {forcedChoice==="FACE"?"PILE PRIS":"CHOISIR PILE"}
+        </button>
+        <button
+          disabled={busy||(!!forcedChoice&&forcedChoice!=="FACE")}
+          className="casinoBtn ivory"
+          onClick={()=>act("COIN_COMMIT",{bet:requiredBet,choice:"FACE"})}
+        >
+          {forcedChoice==="PILE"?"FACE PRISE":"CHOISIR FACE"}
+        </button>
       </div>}
+
+      {showFinished&&<RoundResult
+        text={lastEvent??((winner?.name??"Un joueur")+" remporte la manche.")}
+        onClose={()=>setDismissedResult(game.id)}
+      />}
     </section>;
   }
 
@@ -194,24 +305,38 @@ export default function GamePanel({
     const currentId=s.order?.[s.turnIndex];
     const isDealer=me.id===s.dealerPlayerId&&s.dealerMode==="HOST";
     const myHand=s.hands?.[me.id];
-    const isMyTurn=currentId===me.id&&s.dealerPhase==="PLAYERS";
+    const isMyTurn=currentId===me.id&&s.dealerPhase==="PLAYERS"&&game.status==="ACTIVE";
     const tablePlayers=snap.players.filter((p:any)=>!(s.dealerMode==="HOST"&&p.id===s.dealerPlayerId));
+    const canDouble=!!myHand&&myHand.cards.length===2&&me.balance>=myHand.bet;
+    const dealerMotion=lastEvt?.type==="BLACKJACK_DEALER"&&lastEvt?.message?.toLowerCase().includes("tire");
+    const playerMotion=lastEvt?.type==="BLACKJACK_ACTION"&&lastEvt?.message?.toLowerCase().includes("tire");
 
     return <section className="gameStage blackjackStage">
       <div className="stageAmbient"/>
+      {(dealerMotion||playerMotion)&&<div key={lastEvt.id} className={"dealMotion "+(dealerMotion?"toDealer":"toPlayer")}>
+        <div className="motionCard">Z</div>
+      </div>}
+
       <div className="felt blackjackFelt">
         <div className="feltBorder"/>
-        <div className="tableBranding"><span>ZENKAI</span><b>BLACKJACK</b><small>LE CROUPIER TIRE À 16 • RESTE À 17</small></div>
+        <div className="tableBranding"><span>ZENKAI</span><b>BLACKJACK</b><small>LA BANQUE TIRE À 16 • RESTE À 17</small></div>
+
+        <div key={lastEvt?.id??"dealer"} className={"dealerFigure "+(s.dealerPhase==="DEALER"?"awake":"")}>
+          <div className="dealerHead"/>
+          <div className="dealerBody"><i/><i/></div>
+          <div className="dealerBow">◆</div>
+          <div className="dealerHands"><span/><span/></div>
+        </div>
 
         <div className="dealerZone">
           <PlayerSeat
             dealer
             player={dealerPlayer}
-            active={s.dealerPhase==="DEALER"}
+            active={s.dealerPhase==="DEALER"&&game.status==="ACTIVE"}
             cards={s.dealer}
             status={s.dealerMode==="HOST"?(dealerPlayer?.name??"Croupier hôte"):"Maison"}
           />
-          <div className="dealerScore">{dealerValue===null?"?":dealerValue}</div>
+          <div className={"dealerScore "+(dealerValue!==null&&dealerValue>21?"bust":"")}>{dealerValue===null?"?":dealerValue}</div>
         </div>
 
         <div className="blackjackSeats">
@@ -221,54 +346,75 @@ export default function GamePanel({
               key={p.id}
               player={p}
               isMe={p.id===me.id}
-              active={currentId===p.id&&s.dealerPhase==="PLAYERS"}
+              active={currentId===p.id&&s.dealerPhase==="PLAYERS"&&game.status==="ACTIVE"}
               cards={h?.cards??[]}
               status={statusLabel(h?.status)}
               bet={h?.bet??p.currentBet}
               compact
-            />
+            />;
           })}
         </div>
 
-        <div className="shoeVisual"><span>♠</span><span>♡</span><small>SABOT</small></div>
+        <div className="shoeVisual"><span>♠</span><span>♥</span><small>SABOT</small></div>
       </div>
 
       {isMyTurn&&myHand?.status==="PLAYING"&&<div className="actionDock floating">
         <div className="handReadout"><span>Ta main</span><b>{bjValue(myHand.cards)}</b></div>
-        <button className="casinoBtn primary" onClick={()=>act("BLACKJACK",{move:"HIT"})}>TIRER</button>
-        <button className="casinoBtn ivory" onClick={()=>act("BLACKJACK",{move:"STAND"})}>RESTER</button>
-        <button className="casinoBtn ghost" onClick={()=>act("BLACKJACK",{move:"DOUBLE"})}>DOUBLER</button>
+        <button disabled={busy} className="casinoBtn primary" onClick={()=>act("BLACKJACK",{move:"HIT"})}>TIRER</button>
+        <button disabled={busy} className="casinoBtn ivory" onClick={()=>act("BLACKJACK",{move:"STAND"})}>RESTER</button>
+        <button
+          disabled={busy||!canDouble}
+          title={!canDouble?"Double disponible seulement sur les 2 premières cartes avec assez de Ryôs":""}
+          className="casinoBtn ghost"
+          onClick={()=>act("BLACKJACK",{move:"DOUBLE"})}
+        >
+          DOUBLER
+        </button>
       </div>}
 
-      {isDealer&&s.dealerPhase==="DEALER"&&<div className="dealerConsole">
+      {isDealer&&s.dealerPhase==="DEALER"&&game.status==="ACTIVE"&&<div className="dealerConsole">
         <div>
           <span className="roundEyebrow">CONSOLE CROUPIER</span>
-          <b>{s.dealerRevealed?"La table attend ta décision":"Révèle ta carte cachée"}</b>
+          <b>
+            {!s.dealerRevealed
+              ?"Révèle d'abord ta carte cachée"
+              :(dealerValue??0)<17
+                ?"Tu dois tirer jusqu'à 17"
+                :"Tu peux régler la table"}
+          </b>
         </div>
         {!s.dealerRevealed
-          ?<button className="casinoBtn primary" onClick={()=>act("BLACKJACK_DEALER",{move:"REVEAL"})}>RÉVÉLER</button>
+          ?<button disabled={busy} className="casinoBtn primary" onClick={()=>act("BLACKJACK_DEALER",{move:"REVEAL"})}>RÉVÉLER</button>
           :<>
-            <button className="casinoBtn primary" disabled={(dealerValue??0)>=17} onClick={()=>act("BLACKJACK_DEALER",{move:"DRAW"})}>TIRER</button>
-            <button className="casinoBtn ivory" disabled={(dealerValue??0)<17} onClick={()=>act("BLACKJACK_DEALER",{move:"SETTLE"})}>RÉGLER LA TABLE</button>
+            <button disabled={busy||(dealerValue??0)>=17} className="casinoBtn primary" onClick={()=>act("BLACKJACK_DEALER",{move:"DRAW"})}>TIRER UNE CARTE</button>
+            <button disabled={busy||(dealerValue??0)<17} className="casinoBtn ivory" onClick={()=>act("BLACKJACK_DEALER",{move:"SETTLE"})}>RÉGLER</button>
           </>}
       </div>}
 
-      {!isMyTurn&&!isDealer&&<div className="spectatorHint">
+      {game.status==="ACTIVE"&&!isMyTurn&&!isDealer&&<div className="spectatorHint">
         {s.dealerPhase==="DEALER"
           ?"Le croupier joue sa main…"
           :currentId
-            ?`Au tour de ${snap.players.find((p:any)=>p.id===currentId)?.name??"un joueur"}… `
+            ?"Au tour de "+(snap.players.find((p:any)=>p.id===currentId)?.name??"un joueur")+"…"
             :"La manche se règle…"}
       </div>}
+
+      {showFinished&&<RoundResult
+        text={lastEvent??("Le croupier termine à "+(dealerValue??"?")+".")}
+        onClose={()=>setDismissedResult(game.id)}
+      />}
     </section>;
   }
 
   if(s.kind==="POKER"){
     const hole=s.hole?.[me.id]??[];
     const currentSeat=s.seats[s.currentIndex];
-    const turn=currentSeat?.playerId===me.id&&s.stage!=="SHOWDOWN";
+    const turn=currentSeat?.playerId===me.id&&s.stage!=="SHOWDOWN"&&game.status==="ACTIVE";
     const mine=s.seats.find((x:any)=>x.playerId===me.id);
     const call=Math.max(0,s.currentBet-(mine?.roundBet??0));
+    const minRaiseTarget=Math.max(s.currentBet+s.minRaise,(mine?.roundBet??0)+1);
+    const maxRaiseTarget=(mine?.roundBet??0)+me.balance;
+    const canRaise=maxRaiseTarget>=minRaiseTarget;
     const seats=s.seats.map((seat:any)=>({
       ...seat,
       player:snap.players.find((p:any)=>p.id===seat.playerId)
@@ -283,11 +429,11 @@ export default function GamePanel({
           <span className="roundEyebrow">{stageLabel}</span>
           <div className="communityCards">
             {[0,1,2,3,4].map(i=>s.board[i]
-              ?<CardView key={i} card={s.board[i]}/>
+              ?<CardView key={s.board[i]+"-"+i} card={s.board[i]} source="board" delay={i*120}/>
               :<div className="cardSlot" key={i}><span>{i<3?"F":i===3?"T":"R"}</span></div>
             )}
           </div>
-          <div className="potDisplay"><span>POT</span><b>{fmt(s.pot)}</b><small>Ryôs</small></div>
+          <div key={s.pot} className="potDisplay"><span>POT</span><b>{fmt(s.pot)}</b><small>Ryôs</small></div>
         </div>
 
         <div className="pokerSeatRing">
@@ -301,9 +447,9 @@ export default function GamePanel({
               <PlayerSeat
                 player={seat.player}
                 isMe={seat.playerId===me.id}
-                active={s.seats[s.currentIndex]?.playerId===seat.playerId&&s.stage!=="SHOWDOWN"}
+                active={s.seats[s.currentIndex]?.playerId===seat.playerId&&s.stage!=="SHOWDOWN"&&game.status==="ACTIVE"}
                 cards={s.hole?.[seat.playerId]??[]}
-                status={seat.folded?"Fold":seat.allIn?"All-in":seat.roundBet?`${fmt(seat.roundBet)} misés`:"En jeu"}
+                status={seat.folded?"Couché":seat.allIn?"Tapis":seat.roundBet?fmt(seat.roundBet)+" misés":"En jeu"}
                 bet={seat.roundBet}
                 compact
               />
@@ -317,25 +463,47 @@ export default function GamePanel({
 
       {s.winners?.length>0&&<div className="winnerBanner">
         <span>GAGNANT</span>
-        <b>{s.winners.map((w:any)=>`${snap.players.find((p:any)=>p.id===w.playerId)?.name}: +${fmt(w.amount)}`).join(" • ")}</b>
+        <b>{s.winners.map((w:any)=>(snap.players.find((p:any)=>p.id===w.playerId)?.name??"Joueur")+": +"+fmt(w.amount)).join(" • ")}</b>
       </div>}
 
       {turn&&<div className="actionDock pokerActions">
         <div className="holePreview">
           <span>Ta main</span>
-          <div>{hole.map((c:string,i:number)=><CardView key={i} card={c} mini/>)}</div>
+          <div>{hole.map((card:string,i:number)=><CardView key={card+"-"+i} card={card} mini delay={i*90}/>)}</div>
         </div>
-        <button className="casinoBtn dangerSoft" onClick={()=>act("POKER",{move:"FOLD"})}>FOLD</button>
+        <button disabled={busy} className="casinoBtn dangerSoft" onClick={()=>act("POKER",{move:"FOLD"})}>SE COUCHER</button>
         {call===0
-          ?<button className="casinoBtn primary" onClick={()=>act("POKER",{move:"CHECK"})}>CHECK</button>
-          :<button className="casinoBtn primary" onClick={()=>act("POKER",{move:"CALL"})}>CALL {fmt(call)}</button>}
+          ?<button disabled={busy} className="casinoBtn primary" onClick={()=>act("POKER",{move:"CHECK"})}>PAROLE</button>
+          :<button disabled={busy} className="casinoBtn primary" onClick={()=>act("POKER",{move:"CALL"})}>SUIVRE {fmt(call)}</button>}
         <div className="raiseControl">
-          <span>Relance</span>
-          <input type="number" value={raise} onChange={e=>setRaise(Number(e.target.value))}/>
+          <span>Total de relance</span>
+          <input
+            type="number"
+            min={minRaiseTarget}
+            max={maxRaiseTarget}
+            value={raise}
+            disabled={!canRaise}
+            onChange={e=>setRaise(Number(e.target.value))}
+          />
         </div>
-        <button className="casinoBtn ghost" onClick={()=>act("POKER",{move:"RAISE",amount:raise})}>RAISE</button>
-        <button className="casinoBtn red" onClick={()=>act("POKER",{move:"ALLIN"})}>ALL-IN</button>
+        <button
+          disabled={busy||!canRaise||raise<minRaiseTarget||raise>maxRaiseTarget}
+          className="casinoBtn ghost"
+          onClick={()=>act("POKER",{move:"RAISE",amount:raise})}
+        >
+          RELANCER
+        </button>
+        <button disabled={busy||me.balance<=0} className="casinoBtn red" onClick={()=>act("POKER",{move:"ALLIN"})}>TAPIS</button>
       </div>}
+
+      {game.status==="ACTIVE"&&!turn&&<div className="spectatorHint">
+        {currentSeat?"Au tour de "+(snap.players.find((p:any)=>p.id===currentSeat.playerId)?.name??"un joueur")+"…":"La table avance…"}
+      </div>}
+
+      {showFinished&&<RoundResult
+        text={lastEvent??"La main est terminée."}
+        onClose={()=>setDismissedResult(game.id)}
+      />}
     </section>;
   }
 
