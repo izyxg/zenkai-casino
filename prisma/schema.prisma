@@ -26,21 +26,22 @@ enum GameStatus {
 }
 
 model Room {
-  id              String      @id @default(cuid())
-  code            String      @unique
-  gameType        GameType
-  status          RoomStatus  @default(LOBBY)
-  minBet          Int
-  maxBet          Int
-  maxPlayers      Int
-  startingBalance Int
-  locked          Boolean     @default(false)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  players         Player[]
-  games           Game[]
-  transactions    Transaction[]
-  events          GameEvent[]
+  id                  String      @id @default(cuid())
+  code                String      @unique
+  gameType            GameType
+  status              RoomStatus  @default(LOBBY)
+  minBet              Int
+  maxBet              Int
+  maxPlayers          Int
+  startingBalance     Int
+  blackjackDealerMode String      @default("AUTO")
+  locked              Boolean     @default(false)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  players             Player[]
+  games               Game[]
+  transactions        Transaction[]
+  events              GameEvent[]
 }
 
 model Player {
