@@ -38,7 +38,7 @@ export function PlayerSeat({
       </div>
       {status&&!dealer&&<div className={`seatStatus ${String(status).toLowerCase()}`}>{status}</div>}
     </div>
-    {cards.length>0&&<div className="seatCards">{cards.map((c,i)=><CardView key={`${c}-${i}`} card={c} mini={compact}/>)}</div>}
+    {cards.length>0&&<div className="seatCards">{cards.map((c,i)=><CardView key={`${c}-${i}`} card={c} mini={compact} delay={i*(dealer?170:90)} source={dealer?"dealer":"player"}/>)}</div>}
     {active&&<div className="turnPill">À JOUER</div>}
   </div>
 }
