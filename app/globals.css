@@ -801,3 +801,17 @@ button:disabled{cursor:not-allowed}
     transition-duration:.001ms!important
   }
 }
+
+.dealerFigure.reveal{opacity:.4}
+.dealerFigure.reveal .dealerHands span:first-child{animation:dealerRevealLeft .72s cubic-bezier(.2,.85,.2,1) both}
+.dealerFigure.reveal .dealerHands span:last-child{animation:dealerRevealRight .72s .08s cubic-bezier(.2,.85,.2,1) both}
+@keyframes dealerRevealLeft{
+  0%{transform:translate(0,0) rotate(0)}
+  55%{transform:translate(18px,-9px) rotate(14deg)}
+  100%{transform:translate(7px,-2px) rotate(5deg)}
+}
+@keyframes dealerRevealRight{
+  0%{transform:translate(0,0) rotate(0)}
+  55%{transform:translate(-18px,-7px) rotate(-13deg)}
+  100%{transform:translate(-7px,-2px) rotate(-5deg)}
+}
