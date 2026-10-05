@@ -27,6 +27,8 @@ export function publicGameState(state:AnyGameState,viewerId:string){
 
 export async function setBet(playerId:string,bet:number){
   const p=await prisma.player.findUniqueOrThrow({where:{id:playerId},include:{room:true}});
+  if(p.room.status==="CLOSED") throw new Error("Room fermée");
+  if(p.room.status==="ACTIVE") throw new Error("Impossible de modifier la mise pendant une manche");
   if(bet<p.room.minBet||bet>p.room.maxBet) throw new Error(`Mise entre ${p.room.minBet} et ${p.room.maxBet} Ryôs`);
   if(bet>p.balance) throw new Error("Solde insuffisant");
   if(p.room.gameType==="BLACKJACK"&&p.room.blackjackDealerMode==="HOST"&&p.isHost){
