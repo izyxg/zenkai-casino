@@ -8,7 +8,9 @@ export function PlayerSeat({
   cards=[],
   status,
   bet=0,
-  compact=false
+  compact=false,
+  score,
+  table="default"
 }:{
   player?:any;
   active?:boolean;
@@ -18,27 +20,56 @@ export function PlayerSeat({
   status?:string;
   bet?:number;
   compact?:boolean;
+  score?:number|null;
+  table?:"default"|"blackjack";
 }){
   const name=player?.name??(dealer?"Croupier":"Siège libre");
   const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map((x:string)=>x[0]?.toUpperCase()).join("")||"•";
-  return <div className={`playerSeat ${active?"isActive":""} ${isMe?"isMe":""} ${dealer?"isDealer":""} ${compact?"compact":""}`}>
+  const blackjack=table==="blackjack";
+
+  return <div className={`playerSeat ${active?"isActive":""} ${isMe?"isMe":""} ${dealer?"isDealer":""} ${compact?"compact":""} ${blackjack?"blackjackSeat":""}`}>
     <div className="seatGlow"/>
+
     <div className="seatAvatar">{dealer?"♛":initials}</div>
+
     <div className="seatBody">
       <div className="seatNameRow">
         <strong>{name}</strong>
         {isMe&&<span className="miniTag">VOUS</span>}
         {player?.isHost&&!dealer&&<span className="miniTag gold">HÔTE</span>}
       </div>
-      <div className="seatMeta">
-        {dealer?<span>{status||"Maison"}</span>:<>
-          <span>{player?.balance?.toLocaleString("fr-FR")??0} Ryôs</span>
-          {bet>0&&<span className="seatBet">{bet.toLocaleString("fr-FR")} misés</span>}
-        </>}
-      </div>
+
+      {dealer
+        ?<div className="seatMeta"><span>{status||"Maison"}</span></div>
+        :blackjack
+          ?<div className="blackjackSeatStats">
+            <span><small>SOLDE</small><b>{player?.balance?.toLocaleString("fr-FR")??0}</b><i>Ryôs</i></span>
+            <span><small>MISE</small><b>{bet.toLocaleString("fr-FR")}</b><i>Ryôs</i></span>
+          </div>
+          :<div className="seatMeta">
+            <span>{player?.balance?.toLocaleString("fr-FR")??0} Ryôs</span>
+            {bet>0&&<span className="seatBet">{bet.toLocaleString("fr-FR")} misés</span>}
+          </div>}
+
       {status&&!dealer&&<div className={`seatStatus ${String(status).toLowerCase()}`}>{status}</div>}
     </div>
-    {cards.length>0&&<div className="seatCards">{cards.map((c,i)=><CardView key={`${c}-${i}`} card={c} mini={compact} delay={i*(dealer?170:90)} source={dealer?"dealer":"player"}/>)}</div>}
-    {active&&<div className="turnPill">À JOUER</div>}
-  </div>
+
+    {blackjack&&score!==undefined&&<div className={`seatScore ${score!==null&&score>21?"bust":""}`}>
+      <small>MAIN</small>
+      <b>{score===null?"?":score}</b>
+    </div>}
+
+    {cards.length>0&&<div className="seatCards">
+      {cards.map((c,i)=><CardView
+        key={`${c}-${i}`}
+        card={c}
+        mini={blackjack?false:compact}
+        delay={i*(dealer?170:90)}
+        source={dealer?"dealer":"player"}
+        variant={blackjack?"premium":"standard"}
+      />)}
+    </div>}
+
+    {active&&<div className="turnPill">{isMe?"À TON TOUR":"À JOUER"}</div>}
+  </div>;
 }
