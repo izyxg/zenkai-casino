@@ -1,0 +1,1 @@
+export function CardView({card}:{card:string}){const hidden=card==="??"; const rank=hidden?"?":card[0].replace('T','10'); const s=hidden?"":card[1]; const sym=s==='S'?'♠':s==='H'?'♥':s==='D'?'♦':s==='C'?'♣':''; const red=s==='H'||s==='D'; return <div className={`card ${red?'red':''} ${hidden?'hidden':''}`}>{hidden?'':<>{rank}{sym}</>}</div>}
