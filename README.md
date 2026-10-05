@@ -33,11 +33,14 @@ npm run dev
 
 1. Importer `izyxg/zenkai-casino` dans Vercel.
 2. Créer une base PostgreSQL (Neon ou Supabase conviennent).
-3. Ajouter `DATABASE_URL` dans **Project Settings > Environment Variables**.
-4. Déployer.
-5. Une fois la base disponible, exécuter `npx prisma db push` depuis un terminal ayant accès à la même `DATABASE_URL` (ou utiliser une migration CI dédiée).
+3. Ajouter `DATABASE_URL` dans les variables d'environnement Vercel, au minimum pour Production.
+4. Cliquer sur **Deploy**.
 
-Le build lance `prisma generate` automatiquement.
+C'est tout : le build Vercel exécute automatiquement `prisma generate`, synchronise le schéma avec `prisma db push --skip-generate`, puis lance `next build`.
+
+Le script `build` normal reste sans modification de base de données afin que la CI GitHub puisse vérifier le projet indépendamment. Le script `vercel-build` est réservé au déploiement Vercel.
+
+Si une future modification Prisma nécessite une suppression ou une transformation destructive de données, `prisma db push` s'arrêtera au lieu d'accepter automatiquement la perte de données.
 
 ## Temps réel
 
