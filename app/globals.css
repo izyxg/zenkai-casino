@@ -631,3 +631,173 @@ a{color:inherit;text-decoration:none}
   .hostActions{grid-template-columns:1fr}.hostDeckTitle{align-items:flex-start;flex-direction:column}.sideRail{border-radius:15px}
   .playerSeat{width:150px}.playingCard{width:50px;height:71px}.playingCard.mini{width:38px;height:54px}
 }
+
+
+/* interaction + clarity pass */
+button:disabled{cursor:not-allowed}
+.casinoBtn,.hostAction,.segmented button,.quickBets button,.betInputWrap button{
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.betHeader{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.readyBadge{
+  font-size:7px;letter-spacing:.07em;font-weight:850;color:#9ed5ad;
+  padding:4px 7px;border-radius:999px;border:1px solid rgba(84,170,110,.25);
+  background:rgba(43,113,65,.14);white-space:nowrap
+}
+.setupCard{
+  width:360px;border:1px solid #3c3020;border-radius:13px;background:
+  radial-gradient(circle at 0 0,rgba(210,164,78,.09),transparent 35%),#0e0c09;
+  display:flex;align-items:center;text-align:left;gap:12px;padding:14px
+}
+.setupIcon{
+  width:42px;height:42px;flex:none;border-radius:12px;background:#241b11;border:1px solid #4d3a24;
+  color:#e0bd72;display:grid;place-items:center;font:600 17px Georgia,serif
+}
+.setupCard>div{display:flex;flex-direction:column;gap:4px}
+.setupCard b{font:500 14px Georgia,serif}
+.setupCard span:not(.setupIcon){font-size:8px;line-height:1.5;color:#7d705d}
+.waitingHost{
+  width:190px;min-height:70px;border:1px solid #30271d;border-radius:13px;background:#0d0b09;
+  padding:12px;display:flex;align-items:center;text-align:left;gap:10px
+}
+.waitingHost>i{
+  width:10px;height:10px;border-radius:50%;border:2px solid #7d6b4d;border-top-color:transparent;
+  animation:spin 1.1s linear infinite
+}
+.waitingHost.ready>i{
+  border:0;background:#5db77a;box-shadow:0 0 0 5px rgba(93,183,122,.08),0 0 15px rgba(93,183,122,.25);
+  animation:none
+}
+.waitingHost>div{display:flex;flex-direction:column;gap:3px}
+.waitingHost b{font-size:10px}.waitingHost span{font-size:8px;color:#756a59}
+
+.roundResultBar{
+  position:absolute;z-index:58;left:50%;bottom:16px;transform:translateX(-50%);
+  width:min(650px,calc(100% - 30px));display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:11px 12px 11px 16px;border-radius:15px;border:1px solid rgba(228,192,117,.3);
+  background:linear-gradient(90deg,rgba(19,14,9,.98),rgba(29,22,13,.97));
+  box-shadow:0 20px 55px rgba(0,0,0,.55),0 0 35px rgba(202,151,66,.08);
+  animation:resultRise .38s cubic-bezier(.2,.8,.2,1) both
+}
+.roundResultBar>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.roundResultBar span{font-size:7px;letter-spacing:.18em;color:#9b8050;font-weight:850}
+.roundResultBar b{
+  font:500 13px Georgia,serif;color:#f0dab0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.roundResultBar .casinoBtn{flex:none}
+@keyframes resultRise{
+  from{opacity:0;transform:translate(-50%,18px) scale(.97)}
+  to{opacity:1;transform:translate(-50%,0) scale(1)}
+}
+
+.dealerFigure{
+  position:absolute;z-index:4;left:50%;top:-35px;transform:translateX(-50%);
+  width:122px;height:120px;opacity:.23;pointer-events:none;filter:drop-shadow(0 10px 20px rgba(0,0,0,.4));
+  transition:opacity .35s ease,filter .35s ease
+}
+.dealerFigure.awake{opacity:.38;filter:drop-shadow(0 10px 25px rgba(220,176,91,.12))}
+.dealerHead{
+  position:absolute;left:46px;top:3px;width:31px;height:35px;border-radius:48% 48% 43% 43%;
+  background:linear-gradient(180deg,#dfcaaa,#a88d6c)
+}
+.dealerBody{
+  position:absolute;left:23px;top:34px;width:77px;height:71px;border-radius:38px 38px 10px 10px;
+  background:linear-gradient(90deg,#161514 0,#292725 50%,#151413 100%);overflow:hidden
+}
+.dealerBody:before{
+  content:"";position:absolute;left:50%;top:0;width:26px;height:38px;transform:translateX(-50%);
+  clip-path:polygon(0 0,100% 0,50% 100%);background:#e8dfd1
+}
+.dealerBody i{position:absolute;top:10px;width:10px;height:36px;border-radius:10px;background:#0e0d0c}
+.dealerBody i:first-child{left:10px;transform:rotate(12deg)}.dealerBody i:last-child{right:10px;transform:rotate(-12deg)}
+.dealerBow{position:absolute;z-index:2;left:50%;top:34px;transform:translateX(-50%);color:#8d2925;font-size:14px}
+.dealerHands{position:absolute;left:8px;right:8px;bottom:2px;display:flex;justify-content:space-between}
+.dealerHands span{
+  width:31px;height:16px;border-radius:50%;background:#c9ad89;transform-origin:center center;
+  transition:transform .2s ease
+}
+.dealerFigure.awake .dealerHands span:first-child{animation:dealerHandLeft 1.2s ease-in-out infinite}
+.dealerFigure.awake .dealerHands span:last-child{animation:dealerHandRight 1.2s .15s ease-in-out infinite}
+@keyframes dealerHandLeft{50%{transform:translate(13px,-4px) rotate(8deg)}}
+@keyframes dealerHandRight{50%{transform:translate(-13px,-2px) rotate(-7deg)}}
+
+.dealMotion{position:absolute;inset:0;z-index:52;pointer-events:none;overflow:hidden}
+.motionCard{
+  position:absolute;right:10%;top:30%;width:42px;height:59px;border-radius:6px;
+  border:2px solid #d4b471;color:#d8bb79;background:
+    linear-gradient(45deg,transparent 44%,rgba(236,202,134,.16) 45% 55%,transparent 56%),
+    linear-gradient(-45deg,transparent 44%,rgba(236,202,134,.16) 45% 55%,transparent 56%),#3b241b;
+  background-size:10px 10px;display:grid;place-items:center;font:500 20px Georgia,serif;
+  box-shadow:0 12px 22px rgba(0,0,0,.4)
+}
+.dealMotion.toDealer .motionCard{animation:flyToDealer .62s cubic-bezier(.16,.8,.3,1) forwards}
+.dealMotion.toPlayer .motionCard{animation:flyToPlayer .62s cubic-bezier(.16,.8,.3,1) forwards}
+@keyframes flyToDealer{
+  0%{opacity:.2;transform:translate(0,0) rotate(10deg) scale(.88)}
+  18%{opacity:1}
+  100%{opacity:0;right:50%;top:18%;transform:translate(50%,0) rotate(-12deg) scale(1)}
+}
+@keyframes flyToPlayer{
+  0%{opacity:.2;transform:translate(0,0) rotate(10deg) scale(.88)}
+  18%{opacity:1}
+  100%{opacity:0;right:50%;top:67%;transform:translate(50%,0) rotate(18deg) scale(1)}
+}
+
+.playingCard{
+  will-change:transform,opacity;
+  animation-duration:.42s;
+  animation-timing-function:cubic-bezier(.18,.8,.26,1);
+  animation-fill-mode:both
+}
+.playingCard.from-dealer{animation-name:dealFromDealer}
+.playingCard.from-player{animation-name:dealFromPlayer}
+.playingCard.from-board{animation-name:dealToBoard}
+@keyframes dealFromDealer{
+  from{opacity:0;transform:translate(54px,-42px) rotate(10deg) scale(.84)}
+  to{opacity:1;transform:translate(0,0) rotate(0) scale(1)}
+}
+@keyframes dealFromPlayer{
+  from{opacity:0;transform:translate(18px,-50px) rotate(-9deg) scale(.86)}
+  to{opacity:1;transform:translate(0,0) rotate(0) scale(1)}
+}
+@keyframes dealToBoard{
+  from{opacity:0;transform:translateY(-28px) rotateY(80deg) scale(.9)}
+  to{opacity:1;transform:translateY(0) rotateY(0) scale(1)}
+}
+.playingCard.hidden .cardBackMark{animation:hiddenMarkPulse 2.2s ease-in-out infinite}
+@keyframes hiddenMarkPulse{50%{opacity:.55;transform:scale(.93)}}
+
+.dealerScore{transition:background .25s,border-color .25s,color .25s,transform .25s}
+.dealerScore.bust{background:#411917;border-color:#a84842;color:#ffb1aa;transform:scale(1.08)}
+.potDisplay{animation:potPulse .3s ease both}
+@keyframes potPulse{50%{transform:scale(1.06);border-color:rgba(232,197,121,.52)}}
+.winnerBanner{animation:winnerPop .42s cubic-bezier(.2,.9,.2,1) both}
+@keyframes winnerPop{from{opacity:0;transform:translate(-50%,-45%) scale(.88)}}
+.resultCall{animation:winnerPop .42s cubic-bezier(.2,.9,.2,1) both}
+.coinPrompt.strong{color:#cdbb98}
+.errorToast{animation:toastIn .22s ease both}
+@keyframes toastIn{from{opacity:0;transform:translateY(-5px)}}
+
+.casinoBtn:disabled,.segmented button:disabled,.quickBets button:disabled,.betInputWrap button:disabled{
+  filter:saturate(.55);opacity:.42;transform:none!important
+}
+.kickBtn:disabled{opacity:.35;cursor:not-allowed}
+
+@media(max-width:720px){
+  .setupCard{width:100%}
+  .waitingHost{width:100%;min-height:58px}
+  .roundResultBar{bottom:9px;flex-direction:column;align-items:stretch;gap:9px}
+  .roundResultBar b{white-space:normal;line-height:1.35}
+  .roundResultBar .casinoBtn{width:100%}
+  .dealerFigure{top:-28px;transform:translateX(-50%) scale(.82)}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{
+    scroll-behavior:auto!important;
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.001ms!important
+  }
+}
