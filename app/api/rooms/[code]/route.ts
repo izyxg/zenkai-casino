@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { authenticatePlayer, roomSnapshot } from "@/lib/room";
-import { processBlackjackAutoStart } from "@/lib/game-engine";
 
 export async function GET(req:Request,{params}:{params:Promise<{code:string}>}){
   try{
@@ -9,7 +8,6 @@ export async function GET(req:Request,{params}:{params:Promise<{code:string}>}){
     const playerId=u.searchParams.get("playerId")??"";
     const token=u.searchParams.get("token")??"";
     await authenticatePlayer(code,playerId,token);
-    await processBlackjackAutoStart(code);
     const snap=await roomSnapshot(code,playerId);
     return NextResponse.json(snap);
   }catch(e:any){
