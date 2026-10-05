@@ -1,4 +1,5 @@
 import { CardView } from "./CardView";
+import { ChipStack } from "./ChipStack";
 
 export function PlayerSeat({
   player,
@@ -57,6 +58,11 @@ export function PlayerSeat({
     {blackjack&&score!==undefined&&<div className={`seatScore ${score!==null&&score>21?"bust":""}`}>
       <small>MAIN</small>
       <b>{score===null?"?":score}</b>
+    </div>}
+
+    {blackjack&&bet>0&&<div className="activeBetVisual">
+      <ChipStack amount={bet} compact/>
+      <span><small>MISE</small><b>{bet.toLocaleString("fr-FR")}</b></span>
     </div>}
 
     {cards.length>0&&<div className="seatCards">
