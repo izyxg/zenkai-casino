@@ -308,12 +308,15 @@ export default function GamePanel({
     const isMyTurn=currentId===me.id&&s.dealerPhase==="PLAYERS"&&game.status==="ACTIVE";
     const tablePlayers=snap.players.filter((p:any)=>!(s.dealerMode==="HOST"&&p.id===s.dealerPlayerId));
     const canDouble=!!myHand&&myHand.cards.length===2&&me.balance>=myHand.bet;
-    const dealerMotion=lastEvt?.type==="BLACKJACK_DEALER"&&lastEvt?.message?.toLowerCase().includes("tire");
-    const playerMotion=lastEvt?.type==="BLACKJACK_ACTION"&&lastEvt?.message?.toLowerCase().includes("tire");
+    const motionEvt=[...(snap.events??[])].reverse().find((e:any)=>
+      e.gameId===game.id&&(e.type==="BLACKJACK_DEALER"||e.type==="BLACKJACK_ACTION")
+    );
+    const dealerMotion=motionEvt?.type==="BLACKJACK_DEALER"&&motionEvt?.message?.toLowerCase().includes("tire");
+    const playerMotion=motionEvt?.type==="BLACKJACK_ACTION"&&motionEvt?.message?.toLowerCase().includes("tire");
 
     return <section className="gameStage blackjackStage">
       <div className="stageAmbient"/>
-      {(dealerMotion||playerMotion)&&<div key={lastEvt.id} className={"dealMotion "+(dealerMotion?"toDealer":"toPlayer")}>
+      {(dealerMotion||playerMotion)&&<div key={motionEvt.id} className={"dealMotion "+(dealerMotion?"toDealer":"toPlayer")}>
         <div className="motionCard">Z</div>
       </div>}
 
@@ -321,7 +324,7 @@ export default function GamePanel({
         <div className="feltBorder"/>
         <div className="tableBranding"><span>ZENKAI</span><b>BLACKJACK</b><small>LA BANQUE TIRE À 16 • RESTE À 17</small></div>
 
-        <div key={lastEvt?.id??"dealer"} className={"dealerFigure "+(s.dealerPhase==="DEALER"?"awake":"")}>
+        <div key={lastEvt?.id??"dealer"} className={"dealerFigure "+(s.dealerPhase==="DEALER"?"awake":showFinished?"reveal":"")}>
           <div className="dealerHead"/>
           <div className="dealerBody"><i/><i/></div>
           <div className="dealerBow">◆</div>
