@@ -75,13 +75,6 @@ export default function GamePanel({
   },[me.currentBet]);
 
   useEffect(()=>{
-    if(!snap.blackjackAutoStartAt) return;
-    setClock(Date.now());
-    const timer=setInterval(()=>setClock(Date.now()),100);
-    return()=>clearInterval(timer);
-  },[snap.blackjackAutoStartAt]);
-
-  useEffect(()=>{
     const state=game?.state;
     if(state?.kind!=="POKER") return;
     const mine=state.seats?.find((x:any)=>x.playerId===me.id);
@@ -122,10 +115,6 @@ export default function GamePanel({
 
     if(blackjack){
       const maxPlayable=Math.min(snap.maxBet,me.balance);
-      const countdownMs=snap.blackjackAutoStartAt
-        ?Math.max(0,new Date(snap.blackjackAutoStartAt).getTime()-clock)
-        :null;
-      const countdown=countdownMs===null?null:Math.max(0,Math.ceil(countdownMs/1000));
       const rack=CHIP_DENOMS.filter((value)=>value<=snap.maxBet&&value>=Math.min(100,snap.minBet)).slice(0,7).reverse();
       const seatPlayers=snap.players.filter((p:any)=>!(hostDealer&&p.isHost));
       const dealerHost=hostDealer?snap.players.find((p:any)=>p.isHost):null;
@@ -138,12 +127,11 @@ export default function GamePanel({
             <span className="roundEyebrow">BLACKJACK • TABLE OUVERTE</span>
             <b>Prends place et pose tes jetons</b>
           </div>
-          {countdown!==null&&<div className="autoDealCountdown">
-            <span>DISTRIBUTION AUTO</span>
-            <b>{countdown}</b>
-            <small>seconde{countdown>1?"s":""}</small>
-            <i style={{"--countdown":Math.max(0,Math.min(1,countdownMs!/10000))} as any}/>
-          </div>}
+          <div className={"manualDealStatus "+(startReady?"ready":"")}>
+            <span>{startReady?"PRÊT À JOUER":"EN ATTENTE"}</span>
+            <b>{blackjackEligible}</b>
+            <small>mise{blackjackEligible>1?"s":""} confirmée{blackjackEligible>1?"s":""}</small>
+          </div>
         </div>
 
         <div className="felt blackjackFelt premiumBlackjackFelt blackjackBettingFelt">
@@ -152,7 +140,7 @@ export default function GamePanel({
           <div className="tableBranding blackjackBranding bettingBrand">
             <span>LE CERCLE DU RYÔ</span>
             <b>BLACKJACK</b>
-            <small>POSE TES JETONS • LA DISTRIBUTION EST AUTOMATIQUE</small>
+            <small>POSE TES JETONS • L’HÔTE LANCE LA DISTRIBUTION</small>
           </div>
 
           <div className="pregameDealer">
@@ -165,7 +153,7 @@ export default function GamePanel({
             <div className="pregameDealerPlaque">
               <span>{hostDealer?"CROUPIER HÔTE":"LA MAISON"}</span>
               <b>{dealerHost?.name??"Croupier"}</b>
-              <small>{countdown!==null?"La distribution se prépare…":"En attente d'une mise"}</small>
+              <small>{startReady?"La table est prête":"En attente d'une mise"}</small>
             </div>
           </div>
 
@@ -201,11 +189,9 @@ export default function GamePanel({
           </div>
 
           <div className="tableBetMessage">
-            {countdown!==null
-              ?<><i className="live"/><span>Une mise est posée. Les autres joueurs ont <b>{countdown}s</b> pour miser.</span></>
-              :snap.players.length<=1
-                ?<><i/><span>Tu es seul : ta mise lancera la manche <b>immédiatement</b>.</span></>
-                :<><i/><span>La première mise lance un compte à rebours de <b>10 secondes</b>.</span></>}
+            {startReady
+              ?<><i className="live"/><span>{blackjackEligible} mise{blackjackEligible>1?"s":""} prête{blackjackEligible>1?"s":""}. <b>L’hôte peut distribuer.</b></span></>
+              :<><i/><span>Pose une mise pour être assis dans la prochaine manche.</span></>}
           </div>
         </div>
 
@@ -251,32 +237,49 @@ export default function GamePanel({
                 <button disabled={busy} onClick={()=>setBet(maxPlayable)}>MAX</button>
               </div>
 
-              <button
-                disabled={busy||bet<snap.minBet||bet>maxPlayable}
-                className="confirmBetButton"
-                onClick={()=>act("SET_BET",{bet})}
-              >
-                <span>{busy?"POSE DES JETONS…":me.currentBet===bet&&bet>=snap.minBet?"MISE POSÉE":"POSER "+fmt(bet)+" RYÔS"}</span>
-                <small>
-                  {snap.players.length<=1
-                    ?"La distribution part immédiatement"
-                    :"Après la première mise : 10 secondes avant distribution"}
-                </small>
-              </button>
+              <div className="bettingLaunchColumn">
+                <button
+                  disabled={busy||bet<snap.minBet||bet>maxPlayable}
+                  className="confirmBetButton"
+                  onClick={()=>act("SET_BET",{bet})}
+                >
+                  <span>{busy?"POSE DES JETONS…":me.currentBet===bet&&bet>=snap.minBet?"MISE POSÉE":"POSER "+fmt(bet)+" RYÔS"}</span>
+                  <small>Ta mise reste modifiable tant que la manche n’est pas lancée.</small>
+                </button>
+                {me.isHost&&<button
+                  disabled={busy||!startReady}
+                  className="manualDealButton"
+                  onClick={()=>act("START_GAME")}
+                >
+                  <span>♠</span>
+                  <b>DISTRIBUER</b>
+                  <small>{startReady?startReason:"Il faut au moins une mise"}</small>
+                </button>}
+              </div>
             </>
             :<div className="dealerWaitingConsole">
               <span className="dealerIcon">♣</span>
               <div>
                 <small>TON RÔLE</small>
                 <b>Tu es le croupier</b>
-                <p>Les joueurs prennent place et posent leurs jetons. La manche démarrera automatiquement.</p>
+                <p>Les joueurs posent leurs jetons. Tu décides quand distribuer les cartes.</p>
               </div>
             </div>}
 
+          {me.isHost&&hostDealer&&<button
+            disabled={busy||!startReady}
+            className="manualDealButton dealerLaunch"
+            onClick={()=>act("START_GAME")}
+          >
+            <span>♠</span>
+            <b>DISTRIBUER</b>
+            <small>{startReady?startReason:"Attends qu’un joueur mise"}</small>
+          </button>}
+
           {me.isHost&&<div className="dealerModeInline">
             <span>Banque :</span>
-            <button disabled={busy||countdown!==null} className={snap.blackjackDealerMode==="AUTO"?"active":""} onClick={()=>act("SET_DEALER_MODE",{mode:"AUTO"})}>Maison</button>
-            <button disabled={busy||countdown!==null} className={snap.blackjackDealerMode==="HOST"?"active":""} onClick={()=>act("SET_DEALER_MODE",{mode:"HOST"})}>Moi</button>
+            <button disabled={busy} className={snap.blackjackDealerMode==="AUTO"?"active":""} onClick={()=>act("SET_DEALER_MODE",{mode:"AUTO"})}>Maison</button>
+            <button disabled={busy} className={snap.blackjackDealerMode==="HOST"?"active":""} onClick={()=>act("SET_DEALER_MODE",{mode:"HOST"})}>Moi</button>
           </div>}
         </div>
 
