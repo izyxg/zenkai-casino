@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import GamePanel from "@/components/GamePanel";
 
@@ -20,6 +20,8 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
   const [busy,setBusy]=useState(false);
   const [railTab,setRailTab]=useState<"players"|"log">("players");
   const [copied,setCopied]=useState("");
+  const actionLock=useRef(false);
+  const requestSeq=useRef(0);
 
   useEffect(()=>{
     try{
@@ -32,40 +34,54 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
   },[code,router]);
 
   const load=useCallback(async()=>{
-    if(!session) return;
+    if(!session||actionLock.current) return;
+    const seq=++requestSeq.current;
     try{
-      const r=await fetch(`/api/rooms/${code}?playerId=${encodeURIComponent(session.playerId)}&token=${encodeURIComponent(session.sessionToken)}`,{cache:"no-store"});
-      const d=await r.json();
-      if(!r.ok) throw new Error(d.error);
-      setSnap(d);
-      setError("");
+      const response=await fetch(`/api/rooms/${code}?playerId=${encodeURIComponent(session.playerId)}&token=${encodeURIComponent(session.sessionToken)}`,{cache:"no-store"});
+      const data=await response.json();
+      if(!response.ok) throw new Error(data.error);
+      if(seq===requestSeq.current){
+        setSnap(data);
+        setError("");
+      }
     }catch(e:any){
-      setError(e.message);
+      if(seq===requestSeq.current) setError(e.message);
     }
   },[code,session]);
 
   useEffect(()=>{
     load();
-    const i=setInterval(load,1200);
-    return()=>clearInterval(i);
+    const timer=setInterval(load,900);
+    return()=>clearInterval(timer);
   },[load]);
 
+  useEffect(()=>{
+    if(!error) return;
+    const timer=setTimeout(()=>setError(""),4200);
+    return()=>clearTimeout(timer);
+  },[error]);
+
   async function act(action:string,payload:any={}){
-    if(!session) return;
+    if(!session||actionLock.current) return;
+    actionLock.current=true;
+    requestSeq.current++;
     setBusy(true);
     setError("");
+
     try{
-      const r=await fetch(`/api/rooms/${code}/action`,{
+      const response=await fetch(`/api/rooms/${code}/action`,{
         method:"POST",
         headers:{"content-type":"application/json"},
         body:JSON.stringify({playerId:session.playerId,sessionToken:session.sessionToken,action,payload})
       });
-      const d=await r.json();
-      if(!r.ok) throw new Error(d.error);
-      await load();
+      const data=await response.json();
+      if(!response.ok) throw new Error(data.error);
+      requestSeq.current++;
+      if(data.snapshot) setSnap(data.snapshot);
     }catch(e:any){
       setError(e.message);
     }finally{
+      actionLock.current=false;
       setBusy(false);
     }
   }
@@ -131,7 +147,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
           </button>
         </div>
 
-        <GamePanel snap={snap} me={me} act={act}/>
+        <GamePanel snap={snap} me={me} act={act} busy={busy}/>
 
         {me.isHost&&<section className="hostDeck">
           <div className="hostDeckTitle">
@@ -139,15 +155,15 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
             <small>Disponible entre les manches pour les actions sensibles.</small>
           </div>
           <div className="hostActions">
-            <button className="hostAction" onClick={()=>act("LOCK",{locked:!snap.locked})}>
+            <button className="hostAction" disabled={busy} onClick={()=>act("LOCK",{locked:!snap.locked})}>
               <span>{snap.locked?"⌁":"⌾"}</span>
               <div><b>{snap.locked?"Déverrouiller":"Verrouiller"}</b><small>Contrôler les entrées</small></div>
             </button>
-            <button className="hostAction" disabled={isActive} onClick={()=>act("RESET_BALANCES")}>
+            <button className="hostAction" disabled={busy||isActive} onClick={()=>act("RESET_BALANCES")}>
               <span>↻</span>
               <div><b>Reset soldes</b><small>Remettre tout le monde à {snap.startingBalance.toLocaleString("fr-FR")}</small></div>
             </button>
-            <button className="hostAction danger" disabled={isActive} onClick={()=>act("CLOSE")}>
+            <button className="hostAction danger" disabled={busy||isActive} onClick={()=>act("CLOSE")}>
               <span>×</span>
               <div><b>Fermer la room</b><small>Mettre fin à cette table</small></div>
             </button>
@@ -174,7 +190,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
                   <span>{p.currentBet>0?`${p.currentBet.toLocaleString("fr-FR")} Ryôs misés`:"Aucune mise"}</span>
                 </div>
                 <div className="railBalance">{p.balance.toLocaleString("fr-FR")}<small>Ryôs</small></div>
-                {me.isHost&&!p.isHost&&!isActive&&<button className="kickBtn" onClick={()=>act("KICK",{playerId:p.id})} title="Expulser">×</button>}
+                {me.isHost&&!p.isHost&&!isActive&&<button disabled={busy} className="kickBtn" onClick={()=>act("KICK",{playerId:p.id})} title="Expulser">×</button>}
               </div>;
             })}
           </div>
