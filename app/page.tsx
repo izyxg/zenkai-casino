@@ -135,7 +135,7 @@ export default function Home(){
         <h2>{mode==="create"?selected.title:"Tu as déjà un code ?"}</h2>
         <p>{mode==="create"
           ?"Configure la table, partage le code et laisse les autres joueurs te rejoindre."
-          :"Entre ton pseudo RP et le code reçu. Rien d'autre n'est nécessaire."}</p>
+          :"Entre ton nom et le code reçu. Rien d'autre n'est nécessaire."}</p>
         <div className="modeSwitch">
           <button className={mode==="create"?"active":""} onClick={()=>setMode("create")}>Créer</button>
           <button className={mode==="join"?"active":""} onClick={()=>setMode("join")}>Rejoindre</button>
@@ -207,7 +207,7 @@ export default function Home(){
 
           <button className="casinoBtn primary submitBtn" disabled={creating}>
             <span>{creating?"VÉRIFICATION…":"OUVRIR LA TABLE"}</span>
-            <small>Code créateur requis • puis un code de room sera généré</small>
+            <small>Code du maître de table requis • puis un code de salon sera généré</small>
           </button>
         </form>:<form className="casinoForm joinForm" onSubmit={join}>
           <div className="field full">
