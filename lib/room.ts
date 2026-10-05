@@ -45,6 +45,7 @@ export async function roomSnapshot(code:string, viewerId:string){
       id:game.id,
       type:game.type,
       status:game.status,
+      endedAt:game.endedAt,
       state:publicGameState(game.state as any,viewerId)
     }:null,
     events:room.events.reverse().map(e=>({
