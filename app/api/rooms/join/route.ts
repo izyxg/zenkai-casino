@@ -1,0 +1,12 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { hashToken, newSessionToken } from "@/lib/auth";
+import { logEvent } from "@/lib/game-engine";
+
+const schema=z.object({name:z.string().trim().min(2).max(24),code:z.string().trim().min(4).max(8)});
+export async function POST(req:Request){
+  try{const {name,code}=schema.parse(await req.json()); const room=await prisma.room.findUnique({where:{code:code.toUpperCase()},include:{players:true}}); if(!room) throw new Error("Room inexistante"); if(room.locked) throw new Error("Room verrouillée"); if(room.status==="CLOSED") throw new Error("Room fermée"); if(room.players.length>=room.maxPlayers) throw new Error("Room pleine"); if(room.players.some(p=>p.name.toLowerCase()===name.toLowerCase())) throw new Error("Pseudo déjà utilisé");
+    const token=newSessionToken(); const p=await prisma.player.create({data:{roomId:room.id,name,sessionHash:hashToken(token),balance:room.startingBalance}}); await logEvent(room.id,"JOIN",`${name} rejoint la table.`); return NextResponse.json({code:room.code,playerId:p.id,sessionToken:token});
+  }catch(e:any){return NextResponse.json({error:e?.issues?.[0]?.message??e.message??"Erreur"},{status:400});}
+}
