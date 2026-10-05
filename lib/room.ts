@@ -4,9 +4,9 @@ import { publicGameState } from "./game-engine";
 
 export async function authenticatePlayer(roomCode:string, playerId:string, token:string){
   const room=await prisma.room.findUnique({where:{code:roomCode.toUpperCase()},include:{players:true}});
-  if(!room) throw new Error("Room introuvable");
+  if(!room) throw new Error("Salon introuvable");
   const player=room.players.find(p=>p.id===playerId);
-  if(!player||player.sessionHash!==hashToken(token)) throw new Error("Session invalide");
+  if(!player||player.sessionHash!==hashToken(token)) throw new Error("Accès invalide");
   await prisma.player.update({where:{id:player.id},data:{lastSeen:new Date()}});
   return {room,player};
 }
