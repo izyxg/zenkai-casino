@@ -1,13 +1,13 @@
-" use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const key=(code:string)=>`zenkai-casino:${code}`;
 const games=[
-  {id:"BLACKJACK",icon:"21",title:"Blackjack",tag:"2–8 joueurs",copy:"Affronte la maison ou laisse l'ôte prendre la place du croupier.",accent:"gold"},
+  {id:"BLACKJACK",icon:"21",title:"Blackjack",tag:"2–8 joueurs",copy:"Affronte la maison ou laisse l'hôte prendre la place du croupier.",accent:"gold"},
   {id:"POKER",icon:"♠",title:"Texas Hold'em",tag:"2–8 joueurs",copy:"Blinds, relances, all-in et showdown autour d'une vraie table.",accent:"red"},
-  {id:"COINFLIP",icon:"嗐",title:"Pile ou Face",tag:"2 joueurs",copy:"Un duel rapide. Une mise. Deux camps. Une pièce au milieu.",accent:"ivory"}
+  {id:"COINFLIP",icon:"◐",title:"Pile ou Face",tag:"2 joueurs",copy:"Un duel rapide. Une mise. Deux camps. Une pièce au milieu.",accent:"ivory"}
 ] as const;
 
 export default function Home(){
@@ -172,13 +172,13 @@ export default function Home(){
           </div>
 
           <button className="casinoBtn primary submitBtn" disabled={creating}>
-            <span>{creating?"CREÈATION…":"OUVRIR LA TABLE"}</span>
+            <span>{creating?"CRÉATION…":"OUVRIR LA TABLE"}</span>
             <small>Un code privé sera généré</small>
           </button>
         </form>:<form className="casinoForm joinForm" onSubmit={join}>
           <div className="field full">
             <label>Pseudo RP</label>
-            <input name="name" placeholder="To personnage" required maxLength={24}/>
+            <input name="name" placeholder="Ton personnage" required maxLength={24}/>
           </div>
           <div className="field full">
             <label>Code de la room</label>
