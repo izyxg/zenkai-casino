@@ -147,6 +147,19 @@ export default function Home(){
 
         {mode==="create"?<form className="casinoForm" onSubmit={create}>
           <div className="field full">
+            <label>Code d'accès créateur</label>
+            <input
+              type="password"
+              name="accessCode"
+              placeholder="Code privé"
+              autoComplete="off"
+              required
+              maxLength={128}
+            />
+            <small className="fieldHint">Ce code est réservé aux personnes autorisées à ouvrir une table.</small>
+          </div>
+
+          <div className="field full">
             <label>Pseudo RP</label>
             <input name="name" placeholder="Shuuto Nakae" required maxLength={24}/>
           </div>
@@ -179,8 +192,8 @@ export default function Home(){
           </div>
 
           <button className="casinoBtn primary submitBtn" disabled={creating}>
-            <span>{creating?"CRÉATION…":"OUVRIR LA TABLE"}</span>
-            <small>Un code privé sera généré</small>
+            <span>{creating?"VÉRIFICATION…":"OUVRIR LA TABLE"}</span>
+            <small>Code créateur requis • puis un code de room sera généré</small>
           </button>
         </form>:<form className="casinoForm joinForm" onSubmit={join}>
           <div className="field full">
