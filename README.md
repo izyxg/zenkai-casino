@@ -1,6 +1,6 @@
-# Zenkai Casino
+# Le Cercle du Ryô
 
-Casino **100 % RP** pour Zenkai. Les Ryôs affichés par l'application sont fictifs : aucun argent réel, aucune crypto, aucun dépôt et aucun retrait.
+Maison de jeu **100 % RP** pour Zenkai, sous le nom **Le Cercle du Ryô**. Les Ryôs affichés par l'application sont fictifs : aucun argent réel, aucune crypto, aucun dépôt et aucun retrait.
 
 ## Fonctionnalités
 
