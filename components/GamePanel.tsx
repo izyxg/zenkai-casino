@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CardView } from "./CardView";
 import { PlayerSeat } from "./PlayerSeat";
+import { ChipStack, CHIP_DENOMS } from "./ChipStack";
 
 const fmt=(n:number)=>Number(n||0).toLocaleString("fr-FR");
 
@@ -67,10 +68,18 @@ export default function GamePanel({
   const [bet,setBet]=useState(me.currentBet||snap.minBet);
   const [raise,setRaise]=useState(snap.minBet*2);
   const [dismissedResult,setDismissedResult]=useState<string|null>(null);
+  const [clock,setClock]=useState(Date.now());
 
   useEffect(()=>{
     if(me.currentBet) setBet(me.currentBet);
   },[me.currentBet]);
+
+  useEffect(()=>{
+    if(!snap.blackjackAutoStartAt) return;
+    setClock(Date.now());
+    const timer=setInterval(()=>setClock(Date.now()),100);
+    return()=>clearInterval(timer);
+  },[snap.blackjackAutoStartAt]);
 
   useEffect(()=>{
     const state=game?.state;
@@ -110,6 +119,170 @@ export default function GamePanel({
       :poker
         ?(startReady?pokerEligible+" joueurs prêts":"Au moins 2 joueurs avec assez de Ryôs")
         :(startReady?"Les 2 joueurs sont présents":"Il faut exactement 2 joueurs");
+
+    if(blackjack){
+      const maxPlayable=Math.min(snap.maxBet,me.balance);
+      const countdownMs=snap.blackjackAutoStartAt
+        ?Math.max(0,new Date(snap.blackjackAutoStartAt).getTime()-clock)
+        :null;
+      const countdown=countdownMs===null?null:Math.max(0,Math.ceil(countdownMs/1000));
+      const rack=CHIP_DENOMS.filter((value)=>value<=snap.maxBet&&value>=Math.min(100,snap.minBet)).slice(0,7).reverse();
+      const seatPlayers=snap.players.filter((p:any)=>!(hostDealer&&p.isHost));
+      const dealerHost=hostDealer?snap.players.find((p:any)=>p.isHost):null;
+
+      return <section className="gameStage blackjackLobbyStage">
+        <div className="stageAmbient"/>
+
+        <div className="blackjackLobbyTopbar">
+          <div>
+            <span className="roundEyebrow">BLACKJACK • TABLE OUVERTE</span>
+            <b>Prends place et pose tes jetons</b>
+          </div>
+          {countdown!==null&&<div className="autoDealCountdown">
+            <span>DISTRIBUTION AUTO</span>
+            <b>{countdown}</b>
+            <small>seconde{countdown>1?"s":""}</small>
+            <i style={{"--countdown":Math.max(0,Math.min(1,countdownMs!/10000))} as any}/>
+          </div>}
+        </div>
+
+        <div className="felt blackjackFelt premiumBlackjackFelt blackjackBettingFelt">
+          <div className="feltBorder"/>
+          <div className="blackjackInnerLine"/>
+          <div className="tableBranding blackjackBranding bettingBrand">
+            <span>LE CERCLE DU RYÔ</span>
+            <b>BLACKJACK</b>
+            <small>POSE TES JETONS • LA DISTRIBUTION EST AUTOMATIQUE</small>
+          </div>
+
+          <div className="pregameDealer">
+            <div className="premiumDealer staticDealer">
+              <div className="dealerHead"><i/></div>
+              <div className="dealerBody"><i/><i/><strong/></div>
+              <div className="dealerBow">◆</div>
+              <div className="dealerHands"><span/><span/></div>
+            </div>
+            <div className="pregameDealerPlaque">
+              <span>{hostDealer?"CROUPIER HÔTE":"LA MAISON"}</span>
+              <b>{dealerHost?.name??"Croupier"}</b>
+              <small>{countdown!==null?"La distribution se prépare…":"En attente d'une mise"}</small>
+            </div>
+          </div>
+
+          <div className="pregameSeats">
+            {seatPlayers.map((p:any,index:number)=>{
+              const hasBet=p.currentBet>=snap.minBet;
+              return <div className={"pregameSeat "+(p.id===me.id?"me ":"")+(hasBet?"ready":"")} key={p.id}>
+                <div className="pregameSeatHead">
+                  <div className="pregameAvatar">{p.name.split(/\s+/).slice(0,2).map((x:string)=>x[0]?.toUpperCase()).join("")}</div>
+                  <div>
+                    <b>{p.name}</b>
+                    <span>{p.id===me.id?"TON SIÈGE":p.isHost?"HÔTE":"JOUEUR"}</span>
+                  </div>
+                  <strong>{fmt(p.balance)}<small>Ryôs</small></strong>
+                </div>
+                <div className="betSpot">
+                  <span className="betSpotLabel">{hasBet?"MISE POSÉE":"MISE"}</span>
+                  <ChipStack amount={p.currentBet} compact={false}/>
+                  <b>{hasBet?fmt(p.currentBet):"—"} <small>Ryôs</small></b>
+                  {hasBet&&<em>PRÊT</em>}
+                </div>
+                <div className="seatNumber">SIÈGE {index+1}</div>
+              </div>;
+            })}
+
+            {Array.from({length:Math.max(0,Math.min(5,snap.maxPlayers)-seatPlayers.length)}).map((_,index)=>
+              <div className="pregameSeat empty" key={"empty-"+index}>
+                <div className="emptySeatIcon">＋</div>
+                <span>SIÈGE LIBRE</span>
+                <small>Un joueur peut rejoindre</small>
+              </div>
+            )}
+          </div>
+
+          <div className="tableBetMessage">
+            {countdown!==null
+              ?<><i className="live"/><span>Une mise est posée. Les autres joueurs ont <b>{countdown}s</b> pour miser.</span></>
+              :snap.players.length<=1
+                ?<><i/><span>Tu es seul : ta mise lancera la manche <b>immédiatement</b>.</span></>
+                :<><i/><span>La première mise lance un compte à rebours de <b>10 secondes</b>.</span></>}
+          </div>
+        </div>
+
+        <div className="bettingConsole">
+          {canBet
+            ?<>
+              <div className="bettingIdentity">
+                <span className="controlLabel">TON SOLDE</span>
+                <b>{fmt(me.balance)}</b>
+                <small>Ryôs disponibles</small>
+              </div>
+
+              <div className="selectedBetStack">
+                <ChipStack amount={bet} compact={false}/>
+                <div>
+                  <span>TA MISE</span>
+                  <b>{fmt(bet)}</b>
+                  <small>Ryôs</small>
+                </div>
+              </div>
+
+              <div className="chipRack">
+                <div className="chipRackHeader">
+                  <span>AJOUTER DES JETONS</span>
+                  <small>Clique pour composer ta mise</small>
+                </div>
+                <div className="chipRackRow">
+                  {rack.map((value)=><button
+                    key={value}
+                    disabled={busy||bet+value>maxPlayable}
+                    className="rackChipButton"
+                    onClick={()=>setBet(Math.min(maxPlayable,bet+value))}
+                    title={"Ajouter "+fmt(value)+" Ryôs"}
+                  >
+                    <span className={"rackChip chip-"+value}><b>{value>=1000&&value%1000===0?(value/1000)+"K":value}</b></span>
+                  </button>)}
+                </div>
+              </div>
+
+              <div className="bettingAdjust">
+                <button disabled={busy} onClick={()=>setBet(0)}>VIDER</button>
+                <button disabled={busy} onClick={()=>setBet(Math.min(snap.minBet,maxPlayable))}>MIN</button>
+                <button disabled={busy} onClick={()=>setBet(maxPlayable)}>MAX</button>
+              </div>
+
+              <button
+                disabled={busy||bet<snap.minBet||bet>maxPlayable}
+                className="confirmBetButton"
+                onClick={()=>act("SET_BET",{bet})}
+              >
+                <span>{busy?"POSE DES JETONS…":me.currentBet===bet&&bet>=snap.minBet?"MISE POSÉE":"POSER "+fmt(bet)+" RYÔS"}</span>
+                <small>
+                  {snap.players.length<=1
+                    ?"La distribution part immédiatement"
+                    :"Après la première mise : 10 secondes avant distribution"}
+                </small>
+              </button>
+            </>
+            :<div className="dealerWaitingConsole">
+              <span className="dealerIcon">♣</span>
+              <div>
+                <small>TON RÔLE</small>
+                <b>Tu es le croupier</b>
+                <p>Les joueurs prennent place et posent leurs jetons. La manche démarrera automatiquement.</p>
+              </div>
+            </div>}
+
+          {me.isHost&&<div className="dealerModeInline">
+            <span>Banque :</span>
+            <button disabled={busy||countdown!==null} className={snap.blackjackDealerMode==="AUTO"?"active":""} onClick={()=>act("SET_DEALER_MODE",{mode:"AUTO"})}>Maison</button>
+            <button disabled={busy||countdown!==null} className={snap.blackjackDealerMode==="HOST"?"active":""} onClick={()=>act("SET_DEALER_MODE",{mode:"HOST"})}>Moi</button>
+          </div>}
+        </div>
+
+        {game?.status==="FINISHED"&&lastEvent&&<div className="lastResult">{lastEvent}</div>}
+      </section>;
+    }
 
     return <section className="gameStage lobbyStage">
       <div className="stageAmbient"/>
