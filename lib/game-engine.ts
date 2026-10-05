@@ -26,18 +26,43 @@ export function publicGameState(state:AnyGameState,viewerId:string){
 }
 
 export async function setBet(playerId:string,bet:number){
-  const p=await prisma.player.findUniqueOrThrow({where:{id:playerId},include:{room:true}});
+  const p=await prisma.player.findUniqueOrThrow({
+    where:{id:playerId},
+    include:{room:{include:{players:true}}}
+  });
   if(bet<p.room.minBet||bet>p.room.maxBet) throw new Error(`Mise entre ${p.room.minBet} et ${p.room.maxBet} Ryôs`);
   if(bet>p.balance) throw new Error("Solde insuffisant");
+  if(p.room.gameType==="BLACKJACK"&&p.room.blackjackDealerMode==="HOST"&&p.isHost){
+    throw new Error("Le croupier hôte ne mise pas");
+  }
+
   await prisma.player.update({where:{id:playerId},data:{currentBet:bet}});
+
+  if(p.room.gameType!=="BLACKJACK"||p.room.status!=="LOBBY") return;
+
+  const active=await prisma.game.findFirst({where:{roomId:p.room.id,status:"ACTIVE"}});
+  if(active) return;
+
+  if(p.room.players.length<=1){
+    await prisma.room.update({where:{id:p.room.id},data:{blackjackAutoStartAt:null}});
+    await startGame(p.room.id,undefined,true);
+    return;
+  }
+
+  const autoStartAt=p.room.blackjackAutoStartAt??new Date(Date.now()+10_000);
+  if(!p.room.blackjackAutoStartAt){
+    await prisma.room.update({where:{id:p.room.id},data:{blackjackAutoStartAt:autoStartAt}});
+    const {logEvent}=await import("./games/shared");
+    await logEvent(p.room.id,"BLACKJACK_COUNTDOWN","Une mise est posée. Distribution automatique dans 10 secondes.");
+  }
 }
 
-export async function startGame(roomId:string,hostId:string){
+export async function startGame(roomId:string,hostId?:string,automatic=false){
   const room=await prisma.room.findUniqueOrThrow({where:{id:roomId},include:{players:true}});
   if(room.status==="CLOSED") throw new Error("Room fermée");
 
-  const host=room.players.find(p=>p.id===hostId);
-  if(!host?.isHost) throw new Error("Action réservée à l'hôte");
+  const host=hostId?room.players.find(p=>p.id===hostId):undefined;
+  if(!automatic&&!host?.isHost) throw new Error("Action réservée à l'hôte");
   if(await prisma.game.findFirst({where:{roomId,status:"ACTIVE"}})) throw new Error("Une partie est déjà en cours");
   if(room.gameType==="COINFLIP"&&room.players.length!==2) throw new Error("Pile ou Face nécessite exactement 2 joueurs");
 
@@ -52,7 +77,10 @@ export async function startGame(roomId:string,hostId:string){
     data:{roomId,type:room.gameType,status:"ACTIVE",state:state as any}
   });
 
-  await prisma.room.update({where:{id:roomId},data:{status:"ACTIVE"}});
+  await prisma.room.update({
+    where:{id:roomId},
+    data:{status:"ACTIVE",blackjackAutoStartAt:null}
+  });
 
   const {logEvent}=await import("./games/shared");
   await logEvent(roomId,"GAME_START",`Une partie de ${room.gameType} commence.`,game.id);
@@ -66,4 +94,33 @@ export async function startGame(roomId:string,hostId:string){
   }
 
   return game;
+}
+
+
+export async function processBlackjackAutoStart(code:string){
+  const room=await prisma.room.findUnique({
+    where:{code:code.toUpperCase()},
+    include:{players:true}
+  });
+  if(
+    !room||
+    room.gameType!=="BLACKJACK"||
+    room.status!=="LOBBY"||
+    !room.blackjackAutoStartAt||
+    room.blackjackAutoStartAt.getTime()>Date.now()
+  ) return false;
+
+  const active=await prisma.game.findFirst({where:{roomId:room.id,status:"ACTIVE"}});
+  if(active){
+    await prisma.room.update({where:{id:room.id},data:{blackjackAutoStartAt:null}});
+    return false;
+  }
+
+  try{
+    await startGame(room.id,undefined,true);
+    return true;
+  }catch{
+    await prisma.room.update({where:{id:room.id},data:{blackjackAutoStartAt:null}});
+    return false;
+  }
 }
