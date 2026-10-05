@@ -20,7 +20,7 @@ function bjValue(cards:string[]){
 }
 
 function statusLabel(status?:string){
-  return (x
+  return ({
     PLAYING:"En jeu",
     STAND:"Reste",
     BUST:"Bust",
@@ -172,7 +172,7 @@ export default function GamePanel({
 
         <div className="coinPlayer right">
           <PlayerSeat player={players[1]} isMe={players[1]?.id===me.id} bet={s.commits?.[players[1]?.id]?.bet}/>
-          {s.result&&<div className="choiceReveal">{s.commits?.[players[1]?.id]?.choice??""}</div>}
+          {s.result&&<div className="choiceReveal">{s.commits?.[players[1]?.id]?.choice??"—"}</div>}
         </div>
       </div>
 
