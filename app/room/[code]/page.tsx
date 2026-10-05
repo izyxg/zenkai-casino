@@ -119,7 +119,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
       <div className="roomIdentity">
         <span className="roomState"><i className={isActive?"live":""}/>{isActive?"PARTIE EN COURS":"TABLE OUVERTE"}</span>
         <button className="roomCode" onClick={()=>copy(snap.code,"code")} title="Copier le code">
-          <small>ROOM</small><b>{snap.code}</b><span>{copied==="code"?"COPIÉ":"COPIER"}</span>
+          <small>SALON</small><b>{snap.code}</b><span>{copied==="code"?"COPIÉ":"COPIER"}</span>
         </button>
       </div>
 
@@ -139,11 +139,11 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
           <div className="tableMeta">
             <span><i className="onlineDot"/>{activeCount} en ligne</span>
             <span>{snap.players.length}/{snap.maxPlayers} sièges</span>
-            <span>{snap.locked?"Room verrouillée":"Room ouverte"}</span>
+            <span>{snap.locked?"Salon verrouillé":"Salon ouvert"}</span>
             {snap.gameType==="BLACKJACK"&&<span>{snap.blackjackDealerMode==="HOST"?"Croupier : hôte":"Croupier : maison"}</span>}
           </div>
           <button className="iconTextBtn" onClick={()=>copy(summary,"log")}>
-            <span>⌘</span>{copied==="log"?"Résumé copié":"Copier le journal RP"}
+            <span>⌘</span>{copied==="log"?"Registre copié":"Copier le registre"}
           </button>
         </div>
 
@@ -151,7 +151,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
 
         {me.isHost&&<section className="hostDeck">
           <div className="hostDeckTitle">
-            <div><span className="eyebrow">CONSOLE HÔTE</span><b>Gestion de la room</b></div>
+            <div><span className="eyebrow">MAÎTRE DE TABLE</span><b>Gestion du salon</b></div>
             <small>Disponible entre les manches pour les actions sensibles.</small>
           </div>
           <div className="hostActions">
@@ -165,7 +165,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
             </button>
             <button className="hostAction danger" disabled={busy||isActive} onClick={()=>act("CLOSE")}>
               <span>×</span>
-              <div><b>Fermer la room</b><small>Mettre fin à cette table</small></div>
+              <div><b>Fermer le salon</b><small>Mettre fin à cette table</small></div>
             </button>
           </div>
         </section>}
@@ -201,7 +201,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
             <div><span>Départ</span><b>{snap.startingBalance.toLocaleString("fr-FR")}</b></div>
           </div>
         </div>:<div className="railContent logRail">
-          <div className="railSectionTitle"><span>FIL RP</span><button onClick={()=>copy(summary,"log")}>{copied==="log"?"Copié":"Copier tout"}</button></div>
+          <div className="railSectionTitle"><span>REGISTRE</span><button onClick={()=>copy(summary,"log")}>{copied==="log"?"Copié":"Copier tout"}</button></div>
           <div className="eventFeed">
             {snap.events.length===0&&<div className="emptyLog">La table est silencieuse pour l'instant.</div>}
             {snap.events.map((e:any,i:number)=><div className="feedEvent" key={e.id}>
