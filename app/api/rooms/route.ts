@@ -3,8 +3,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { hashToken, newSessionToken, randomRoomCode } from "@/lib/auth";
 import { logEvent } from "@/lib/game-engine";
+import { timingSafeEqual } from "crypto";
 
 const schema=z.object({
+  accessCode:z.string().min(1).max(128),
   name:z.string().trim().min(2).max(24),
   gameType:z.enum(["COINFLIP","BLACKJACK","POKER"]),
   minBet:z.coerce.number().int().min(1),
@@ -16,6 +18,16 @@ const schema=z.object({
 export async function POST(req:Request){
   try{
     const raw=schema.parse(await req.json());
+    const expectedCode=process.env.ROOM_CREATE_CODE;
+    if(!expectedCode) throw new Error("La création de room est temporairement indisponible");
+
+    const provided=Buffer.from(raw.accessCode);
+    const expected=Buffer.from(expectedCode);
+    const authorized=provided.length===expected.length&&timingSafeEqual(provided,expected);
+    if(!authorized){
+      return NextResponse.json({error:"Code de création incorrect"},{status:403});
+    }
+
     const {
       name,
       gameType,
