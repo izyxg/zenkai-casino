@@ -28,6 +28,6 @@ export function CardView({
       <div className="cardSuit">{sym}</div>
       <div className="cardCorner bottom"><b>{rank}</b><span>{sym}</span></div>
     </>}
-    {hidden&&<div className="cardBackMark">Z</div>}
+    {hidden&&<div className="cardBackMark">C</div>}
   </div>;
 }
