@@ -303,8 +303,10 @@ export default function GamePanel({
     const dealerPlayer=s.dealerMode==="HOST"?snap.players.find((p:any)=>p.id===s.dealerPlayerId):undefined;
     const dealerValue=bjValue(s.dealer);
     const currentId=s.order?.[s.turnIndex];
+    const activePlayer=snap.players.find((p:any)=>p.id===currentId);
     const isDealer=me.id===s.dealerPlayerId&&s.dealerMode==="HOST";
     const myHand=s.hands?.[me.id];
+    const myValue=myHand?bjValue(myHand.cards):null;
     const isMyTurn=currentId===me.id&&s.dealerPhase==="PLAYERS"&&game.status==="ACTIVE";
     const tablePlayers=snap.players.filter((p:any)=>!(s.dealerMode==="HOST"&&p.id===s.dealerPlayerId));
     const canDouble=!!myHand&&myHand.cards.length===2&&me.balance>=myHand.bet;
@@ -313,92 +315,192 @@ export default function GamePanel({
     );
     const dealerMotion=motionEvt?.type==="BLACKJACK_DEALER"&&motionEvt?.message?.toLowerCase().includes("tire");
     const playerMotion=motionEvt?.type==="BLACKJACK_ACTION"&&motionEvt?.message?.toLowerCase().includes("tire");
+    const phaseLabel=game.status==="FINISHED"
+      ?"MANCHE TERMINÉE"
+      :s.dealerPhase==="DEALER"
+        ?"TOUR DU CROUPIER"
+        :isMyTurn
+          ?"À TON TOUR"
+          :activePlayer
+            ?"TOUR DE "+activePlayer.name.toUpperCase()
+            :"DISTRIBUTION";
+    const dealerState=dealerValue===null
+      ?"CARTE CACHÉE"
+      :dealerValue>21
+        ?"BUST"
+        :s.dealerPhase==="DEALER"
+          ?dealerValue<17?"DOIT TIRER":"PEUT RESTER"
+          :"BANQUE";
 
     return <section className="gameStage blackjackStage">
       <div className="stageAmbient"/>
+      <div className="blackjackRoundBar">
+        <div className={"roundPulse "+(isMyTurn?"yourTurn":"")}><i/></div>
+        <div>
+          <small>BLACKJACK • MANCHE EN COURS</small>
+          <b>{phaseLabel}</b>
+        </div>
+        <div className="roundRule"><span>RÈGLE MAISON</span><b>17</b><small>la banque reste</small></div>
+      </div>
+
       {(dealerMotion||playerMotion)&&<div key={motionEvt.id} className={"dealMotion "+(dealerMotion?"toDealer":"toPlayer")}>
-        <div className="motionCard">C</div>
+        <div className="motionCard"><span>C</span></div>
       </div>}
 
-      <div className="felt blackjackFelt">
+      <div className="felt blackjackFelt premiumBlackjackFelt">
         <div className="feltBorder"/>
-        <div className="tableBranding"><span>LE CERCLE DU RYÔ</span><b>BLACKJACK</b><small>LA BANQUE TIRE À 16 • RESTE À 17</small></div>
+        <div className="blackjackInnerLine"/>
+        <div className="tableBranding blackjackBranding">
+          <span>LE CERCLE DU RYÔ</span>
+          <b>BLACKJACK</b>
+          <small>PAYS DU VENT • TABLE PRIVÉE</small>
+        </div>
 
-        <div key={lastEvt?.id??"dealer"} className={"dealerFigure "+(s.dealerPhase==="DEALER"?"awake":showFinished?"reveal":"")}>
-          <div className="dealerHead"/>
-          <div className="dealerBody"><i/><i/></div>
+        <div key={lastEvt?.id??"dealer"} className={"dealerFigure premiumDealer "+(s.dealerPhase==="DEALER"?"awake":showFinished?"reveal":"")}>
+          <div className="dealerHead"><i/></div>
+          <div className="dealerBody"><i/><i/><strong/></div>
           <div className="dealerBow">◆</div>
           <div className="dealerHands"><span/><span/></div>
         </div>
 
-        <div className="dealerZone">
-          <PlayerSeat
-            dealer
-            player={dealerPlayer}
-            active={s.dealerPhase==="DEALER"&&game.status==="ACTIVE"}
-            cards={s.dealer}
-            status={s.dealerMode==="HOST"?(dealerPlayer?.name??"Croupier hôte"):"Maison"}
-          />
-          <div className={"dealerScore "+(dealerValue!==null&&dealerValue>21?"bust":"")}>{dealerValue===null?"?":dealerValue}</div>
+        <div className="dealerStation">
+          <div className="dealerPlaque">
+            <span>{s.dealerMode==="HOST"?"CROUPIER HÔTE":"LA MAISON"}</span>
+            <b>{dealerPlayer?.name??"Croupier"}</b>
+            <small>{dealerState}</small>
+          </div>
+
+          <div className="dealerHandArea">
+            {s.dealer.map((card:string,i:number)=><CardView
+              key={card+"-"+i}
+              card={card}
+              source="dealer"
+              variant="premium"
+              delay={i*170}
+            />)}
+          </div>
+
+          <div className={"dealerValueOrb "+(dealerValue!==null&&dealerValue>21?"bust":"")}>
+            <span>MAIN</span>
+            <b>{dealerValue===null?"?":dealerValue}</b>
+          </div>
         </div>
 
-        <div className="blackjackSeats">
+        <div className="blackjackBetArc" aria-hidden="true">
+          <span>MISE</span><i/><span>MISE</span><i/><span>MISE</span>
+        </div>
+
+        <div className="blackjackSeats premiumSeats">
           {tablePlayers.map((p:any)=>{
             const h=s.hands?.[p.id];
+            const score=h?bjValue(h.cards):undefined;
             return <PlayerSeat
               key={p.id}
               player={p}
               isMe={p.id===me.id}
               active={currentId===p.id&&s.dealerPhase==="PLAYERS"&&game.status==="ACTIVE"}
               cards={h?.cards??[]}
-              status={statusLabel(h?.status)}
+              status={h?statusLabel(h.status):"Spectateur"}
               bet={h?.bet??p.currentBet}
+              score={score}
+              table="blackjack"
               compact
             />;
           })}
         </div>
 
-        <div className="shoeVisual"><span>♠</span><span>♥</span><small>SABOT</small></div>
+        <div className="shoeVisual premiumShoe">
+          <div className="shoeStack"><i/><i/><i/></div>
+          <span>♠</span><span>♥</span>
+          <small>SABOT</small>
+        </div>
       </div>
 
-      {isMyTurn&&myHand?.status==="PLAYING"&&<div className="actionDock floating">
-        <div className="handReadout"><span>Ta main</span><b>{bjValue(myHand.cards)}</b></div>
-        <button disabled={busy} className="casinoBtn primary" onClick={()=>act("BLACKJACK",{move:"HIT"})}>TIRER</button>
-        <button disabled={busy} className="casinoBtn ivory" onClick={()=>act("BLACKJACK",{move:"STAND"})}>RESTER</button>
-        <button
-          disabled={busy||!canDouble}
-          title={!canDouble?"Double disponible seulement sur les 2 premières cartes avec assez de Ryôs":""}
-          className="casinoBtn ghost"
-          onClick={()=>act("BLACKJACK",{move:"DOUBLE"})}
-        >
-          DOUBLER
-        </button>
+      {myHand&&<div className={"blackjackControlDeck "+(isMyTurn?"active":"")}>
+        <div className="playerHudIdentity">
+          <div className="hudAvatar">{me.name.split(/\s+/).slice(0,2).map((x:string)=>x[0]?.toUpperCase()).join("")}</div>
+          <div><small>TA PLACE</small><b>{me.name}</b><span>{statusLabel(myHand.status)}</span></div>
+        </div>
+
+        <div className="hudMetric">
+          <span>SOLDE</span>
+          <b>{fmt(me.balance)}</b>
+          <small>Ryôs</small>
+        </div>
+        <div className="hudMetric">
+          <span>MISE</span>
+          <b>{fmt(myHand.bet)}</b>
+          <small>Ryôs</small>
+        </div>
+        <div className={"hudMetric hand "+(myValue!==null&&myValue>21?"bust":"")}>
+          <span>TA MAIN</span>
+          <b>{myValue===null?"?":myValue}</b>
+          <small>{myValue===21?"BLACKJACK":myValue!==null&&myValue>21?"BUST":"points"}</small>
+        </div>
+
+        <div className="blackjackActions">
+          {isMyTurn&&myHand.status==="PLAYING"
+            ?<>
+              <button disabled={busy} className="blackjackAction hit" onClick={()=>act("BLACKJACK",{move:"HIT"})}>
+                <span className="actionIcon">＋</span>
+                <span><b>TIRER</b><small>Recevoir une carte</small></span>
+              </button>
+              <button disabled={busy} className="blackjackAction stand" onClick={()=>act("BLACKJACK",{move:"STAND"})}>
+                <span className="actionIcon">◆</span>
+                <span><b>RESTER</b><small>Garder {myValue} points</small></span>
+              </button>
+              <button
+                disabled={busy||!canDouble}
+                title={!canDouble?"Disponible avec 2 cartes et assez de Ryôs":""}
+                className="blackjackAction double"
+                onClick={()=>act("BLACKJACK",{move:"DOUBLE"})}
+              >
+                <span className="actionIcon">×2</span>
+                <span><b>DOUBLER</b><small>{canDouble?fmt(myHand.bet*2)+" Ryôs au total":"Indisponible"}</small></span>
+              </button>
+            </>
+            :<div className="waitingTurn">
+              <i/>
+              <span>
+                <b>{game.status==="FINISHED"?"Manche terminée":s.dealerPhase==="DEALER"?"Le croupier joue":activePlayer?"Au tour de "+activePlayer.name:"Résolution en cours"}</b>
+                <small>Ta main et ton solde restent visibles ici.</small>
+              </span>
+            </div>}
+        </div>
       </div>}
 
-      {isDealer&&s.dealerPhase==="DEALER"&&game.status==="ACTIVE"&&<div className="dealerConsole">
-        <div>
+      {isDealer&&s.dealerPhase==="DEALER"&&game.status==="ACTIVE"&&<div className="dealerConsole premiumDealerConsole">
+        <div className="dealerConsoleTitle">
           <span className="roundEyebrow">CONSOLE CROUPIER</span>
           <b>
             {!s.dealerRevealed
-              ?"Révèle d'abord ta carte cachée"
+              ?"Révèle la carte cachée"
               :(dealerValue??0)<17
-                ?"Tu dois tirer jusqu'à 17"
-                :"Tu peux régler la table"}
+                ?"La banque doit encore tirer"
+                :"La banque peut régler la table"}
           </b>
+          <small>{dealerValue===null?"Valeur masquée":(dealerValue??0)+" points"}</small>
         </div>
         {!s.dealerRevealed
-          ?<button disabled={busy} className="casinoBtn primary" onClick={()=>act("BLACKJACK_DEALER",{move:"REVEAL"})}>RÉVÉLER</button>
+          ?<button disabled={busy} className="dealerBigAction reveal" onClick={()=>act("BLACKJACK_DEALER",{move:"REVEAL"})}>
+            <span>↻</span><b>RÉVÉLER</b><small>Retourner la carte cachée</small>
+          </button>
           :<>
-            <button disabled={busy||(dealerValue??0)>=17} className="casinoBtn primary" onClick={()=>act("BLACKJACK_DEALER",{move:"DRAW"})}>TIRER UNE CARTE</button>
-            <button disabled={busy||(dealerValue??0)<17} className="casinoBtn ivory" onClick={()=>act("BLACKJACK_DEALER",{move:"SETTLE"})}>RÉGLER</button>
+            <button disabled={busy||(dealerValue??0)>=17} className="dealerBigAction draw" onClick={()=>act("BLACKJACK_DEALER",{move:"DRAW"})}>
+              <span>＋</span><b>TIRER</b><small>Obligatoire sous 17</small>
+            </button>
+            <button disabled={busy||(dealerValue??0)<17} className="dealerBigAction settle" onClick={()=>act("BLACKJACK_DEALER",{move:"SETTLE"})}>
+              <span>✓</span><b>RÉGLER</b><small>Distribuer les gains</small>
+            </button>
           </>}
       </div>}
 
-      {game.status==="ACTIVE"&&!isMyTurn&&!isDealer&&<div className="spectatorHint">
+      {!myHand&&game.status==="ACTIVE"&&!isDealer&&<div className="spectatorHint blackjackSpectator">
+        <span>MODE SPECTATEUR</span>
         {s.dealerPhase==="DEALER"
           ?"Le croupier joue sa main…"
-          :currentId
-            ?"Au tour de "+(snap.players.find((p:any)=>p.id===currentId)?.name??"un joueur")+"…"
+          :activePlayer
+            ?"Au tour de "+activePlayer.name+"…"
             :"La manche se règle…"}
       </div>}
 
