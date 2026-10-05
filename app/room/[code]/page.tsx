@@ -215,8 +215,8 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
         </div>}
 
         <div className="railFooter">
-          <span>Ryôs fictifs</span>
-          <small>Aucun argent réel • aucun retrait</small>
+          <span>Le Cercle du Ryô</span>
+          <small>Maison de jeu privée</small>
         </div>
       </aside>
     </div>
