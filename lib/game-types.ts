@@ -12,6 +12,9 @@ export type BlackjackHand = {
   bet:number;
   status:"PLAYING"|"STAND"|"BUST"|"BLACKJACK"|"DONE";
   doubled?:boolean;
+  outcome?:"BLACKJACK"|"WIN"|"PUSH"|"LOSS"|"BUST";
+  payout?:number;
+  net?:number;
 };
 
 export type BlackjackState = {
