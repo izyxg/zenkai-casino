@@ -77,7 +77,8 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
       throw new Error("Action inconnue");
     }
 
-    const snapshot=await roomSnapshot(code,player.id);\n    return NextResponse.json({ok:true,snapshot});
+    const snapshot=await roomSnapshot(code,player.id);
+    return NextResponse.json({ok:true,snapshot});
   }catch(e:any){
     return NextResponse.json({error:e.message??"Erreur"},{status:400});
   }
