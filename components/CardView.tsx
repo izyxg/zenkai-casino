@@ -1,18 +1,33 @@
 const symbols:Record<string,string>={S:"♠",H:"♥",D:"♦",C:"♣"};
 
-export function CardView({card,mini=false}:{card:string;mini?:boolean}){
+export function CardView({
+  card,
+  mini=false,
+  delay=0,
+  source="player"
+}:{
+  card:string;
+  mini?:boolean;
+  delay?:number;
+  source?:"player"|"dealer"|"board";
+}){
   const hidden=card==="??";
   const rawRank=hidden?"?":card[0];
   const rank=rawRank==="T"?"10":rawRank;
   const suit=hidden?"":card[1];
   const sym=symbols[suit]??"";
   const red=suit==="H"||suit==="D";
-  return <div className={`playingCard ${red?"red":""} ${hidden?"hidden":""} ${mini?"mini":""}`} aria-label={hidden?"Carte cachée":`${rank}${sym}`}>
+
+  return <div
+    className={`playingCard ${red?"red":""} ${hidden?"hidden":""} ${mini?"mini":""} from-${source}`}
+    aria-label={hidden?"Carte cachée":`${rank}${sym}`}
+    style={{animationDelay:`${delay}ms`}}
+  >
     {!hidden&&<>
       <div className="cardCorner"><b>{rank}</b><span>{sym}</span></div>
       <div className="cardSuit">{sym}</div>
       <div className="cardCorner bottom"><b>{rank}</b><span>{sym}</span></div>
     </>}
     {hidden&&<div className="cardBackMark">Z</div>}
-  </div>
+  </div>;
 }
