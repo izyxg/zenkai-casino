@@ -32,6 +32,9 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
       if(active) throw new Error("Impossible pendant une partie");
       const mode=payload.mode==="HOST"?"HOST":"AUTO";
       await prisma.room.update({where:{id:room.id},data:{blackjackDealerMode:mode}});
+      if(mode==="HOST"){
+        await prisma.player.update({where:{id:player.id},data:{currentBet:0}});
+      }
       await logEvent(room.id,"ROOM",mode==="HOST"?`${player.name} prend la place du croupier.`:"Le croupier automatique reprend la table.");
     }else if(action==="START_GAME"){
       await startGame(room.id,player.id);
