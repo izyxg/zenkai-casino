@@ -1696,3 +1696,47 @@ button:disabled{cursor:not-allowed}
     grid-template-rows:1fr 1fr;
   }
 }
+
+.activeBetVisual{
+  position:absolute;
+  left:50%;
+  top:-44px;
+  transform:translateX(-50%);
+  min-width:92px;
+  height:44px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  gap:3px;
+  pointer-events:none;
+}
+.activeBetVisual .chipStack{
+  transform:scale(.78);
+  transform-origin:center bottom;
+  margin-right:-5px;
+}
+.activeBetVisual>span{
+  display:flex;
+  flex-direction:column;
+  padding:4px 6px;
+  border-radius:7px;
+  background:rgba(8,18,12,.76);
+  border:1px solid rgba(230,194,119,.14);
+}
+.activeBetVisual small{
+  font-size:4.5px;
+  letter-spacing:.12em;
+  color:#766b59;
+}
+.activeBetVisual b{
+  font:500 8px Georgia,serif;
+  color:#d8be84;
+}
+.blackjackSeat .seatStatus.bust{
+  animation:bustFlash .42s ease both;
+}
+@keyframes bustFlash{
+  0%{transform:scale(.9);opacity:.4}
+  55%{transform:scale(1.08);opacity:1;box-shadow:0 0 18px rgba(184,70,60,.18)}
+  100%{transform:scale(1);opacity:1}
+}
