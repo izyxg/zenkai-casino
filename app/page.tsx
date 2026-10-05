@@ -191,6 +191,20 @@ export default function Home(){
             <div className="moneyInput"><input type="number" name="startingBalance" min="100" defaultValue="10000"/><span>Ryôs</span></div>
           </div>
 
+          {gameType==="BLACKJACK"&&<div className="field full">
+            <label>Croupier Blackjack</label>
+            <div className="dealerCreateChoice">
+              <label>
+                <input type="radio" name="blackjackDealerMode" value="HOST" defaultChecked/>
+                <span><b>Moi, l'hôte</b><small>Tu tiens la banque, révèles les cartes et tires pour le croupier.</small></span>
+              </label>
+              <label>
+                <input type="radio" name="blackjackDealerMode" value="AUTO"/>
+                <span><b>Maison automatique</b><small>Le serveur joue la main du croupier automatiquement.</small></span>
+              </label>
+            </div>
+          </div>}
+
           <button className="casinoBtn primary submitBtn" disabled={creating}>
             <span>{creating?"VÉRIFICATION…":"OUVRIR LA TABLE"}</span>
             <small>Code créateur requis • puis un code de room sera généré</small>
