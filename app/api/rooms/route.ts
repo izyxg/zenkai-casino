@@ -12,7 +12,8 @@ const schema=z.object({
   minBet:z.coerce.number().int().min(1),
   maxBet:z.coerce.number().int().min(1),
   maxPlayers:z.coerce.number().int().min(2).max(8),
-  startingBalance:z.coerce.number().int().min(100)
+  startingBalance:z.coerce.number().int().min(100),
+  blackjackDealerMode:z.enum(["AUTO","HOST"]).optional().default("AUTO")
 }).refine(x=>x.maxBet>=x.minBet,{message:"La mise max doit être supérieure à la mise min"});
 
 export async function POST(req:Request){
@@ -34,7 +35,8 @@ export async function POST(req:Request){
       minBet,
       maxBet,
       maxPlayers,
-      startingBalance
+      startingBalance,
+      blackjackDealerMode
     }=raw;
 
     const roomMaxPlayers=gameType==="COINFLIP"?2:maxPlayers;
@@ -58,6 +60,7 @@ export async function POST(req:Request){
         maxBet,
         maxPlayers:roomMaxPlayers,
         startingBalance,
+        blackjackDealerMode:gameType==="BLACKJACK"?blackjackDealerMode:"AUTO",
         players:{
           create:{
             name,
