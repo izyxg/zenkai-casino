@@ -68,14 +68,14 @@ export default function Home(){
         <span className="logoMark">C</span>
       <span><b>LE CERCLE</b><small>DU RYÔ</small></span>
       </a>
-      <div className="navStatus"><i/> Maison de jeu RP • Ryôs fictifs</div>
+      <div className="navStatus"><i/> Maison de jeu privée • Ryôs</div>
     </nav>
 
     <section className="landingHero">
       <div className="heroCopy">
         <div className="eyebrow">LE CERCLE DU RYÔ • MAISON DE JEU PRIVÉE</div>
         <h1>Le désert<br/><em>ne rembourse personne.</em></h1>
-        <p>Tables privées, parties entre joueurs et ambiance de maison de jeu pensée pour le RP. Ici, chaque mise existe uniquement en Ryôs fictifs.</p>
+        <p>Tables privées, jeux de cartes et duels autour du Ryô. Entre, prends place et laisse la table décider du reste.</p>
         <div className="heroActions">
           <button className="casinoBtn primary large" onClick={()=>openEntry("create")}>CRÉER UNE TABLE</button>
           <button className="casinoBtn ghost large" onClick={()=>openEntry("join")}>REJOINDRE PAR CODE</button>
@@ -83,7 +83,7 @@ export default function Home(){
         <div className="heroStats">
           <div><b>3</b><span>jeux</span></div>
           <div><b>8</b><span>joueurs max</span></div>
-          <div><b>100%</b><span>RP</span></div>
+          <div><b>100%</b><span>privé</span></div>
         </div>
       </div>
 
@@ -112,7 +112,7 @@ export default function Home(){
     <section className="gameShowcase" id="games">
       <div className="sectionHead">
         <div><span className="eyebrow">LES TABLES</span><h2>Choisis ton terrain de jeu</h2></div>
-        <p>Chaque partie tourne côté serveur : les cartes, résultats et paiements ne dépendent jamais du navigateur d'un joueur.</p>
+        <p>Chaque table suit les règles de la maison : cartes, mises et résultats sont réglés directement par Le Cercle.</p>
       </div>
       <div className="gameCards">
         {games.map(g=><button
@@ -131,7 +131,7 @@ export default function Home(){
 
     <section className="entrySection" id="entry">
       <div className="entryIntro">
-        <span className="eyebrow">{mode==="create"?"OUVRIR UNE TABLE":"ENTRER DANS UNE ROOM"}</span>
+        <span className="eyebrow">{mode==="create"?"OUVRIR UNE TABLE":"ENTRER DANS UN SALON"}</span>
         <h2>{mode==="create"?selected.title:"Tu as déjà un code ?"}</h2>
         <p>{mode==="create"
           ?"Configure la table, partage le code et laisse les autres joueurs te rejoindre."
@@ -160,7 +160,7 @@ export default function Home(){
           </div>
 
           <div className="field full">
-            <label>Pseudo RP</label>
+            <label>Nom</label>
             <input name="name" placeholder="Shuuto Nakae" required maxLength={24}/>
           </div>
 
@@ -211,15 +211,15 @@ export default function Home(){
           </button>
         </form>:<form className="casinoForm joinForm" onSubmit={join}>
           <div className="field full">
-            <label>Pseudo RP</label>
+            <label>Nom</label>
             <input name="name" placeholder="Ton personnage" required maxLength={24}/>
           </div>
           <div className="field full">
-            <label>Code de la room</label>
+            <label>Code du salon</label>
             <input className="codeInput" name="code" maxLength={8} placeholder="A7K9QX" required/>
           </div>
           <button className="casinoBtn primary submitBtn">
-            <span>ENTRER DANS LA ROOM</span>
+            <span>ENTRER DANS LE SALON</span>
             <small>Connexion immédiate</small>
           </button>
         </form>}
@@ -227,15 +227,15 @@ export default function Home(){
     </section>
 
     <section className="trustStrip">
-      <div><span>◆</span><b>Rooms privées</b><small>Accès par code court</small></div>
+      <div><span>◆</span><b>Salons privés</b><small>Accès par code court</small></div>
       <div><span>♜</span><b>Croupier hôte</b><small>Disponible au Blackjack</small></div>
-      <div><span>◎</span><b>Journal RP</b><small>Actions copiables</small></div>
-      <div><span>∞</span><b>Aucune valeur réelle</b><small>Ryôs fictifs uniquement</small></div>
+      <div><span>◎</span><b>Registre de table</b><small>Chaque action est consignée</small></div>
+      <div><span>∞</span><b>Maison du Ryô</b><small>Chaque table joue en Ryôs</small></div>
     </section>
 
     <footer className="landingFooter">
       <div className="logoLockup"><span className="logoMark">C</span><span><b>LE CERCLE</b><small>DU RYÔ</small></span></div>
-      <p>Outil de roleplay non officiel. Aucun dépôt, aucun retrait, aucun argent réel.</p>
+      <p>Le Cercle du Ryô • Maison de jeu privée</p>
     </footer>
   </main>;
 }
