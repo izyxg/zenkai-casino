@@ -19,6 +19,13 @@ export default function Home(){
 
   const selected=useMemo(()=>games.find(g=>g.id===gameType)!,[gameType]);
 
+  function openEntry(next:"create"|"join"){
+    setMode(next);
+    requestAnimationFrame(()=>{
+      document.getElementById("entry")?.scrollIntoView({behavior:"smooth",block:"start"});
+    });
+  }
+
   async function create(e:React.FormEvent<HTMLFormElement>){
     e.preventDefault();
     setCreating(true);
@@ -70,8 +77,8 @@ export default function Home(){
         <h1>Le désert<br/><em>ne rembourse personne.</em></h1>
         <p>Tables privées, parties entre joueurs et ambiance de maison de jeu pensée pour le RP. Ici, chaque mise existe uniquement en Ryôs fictifs.</p>
         <div className="heroActions">
-          <button className="casinoBtn primary large" onClick={()=>setMode("create")}>CRÉER UNE TABLE</button>
-          <button className="casinoBtn ghost large" onClick={()=>setMode("join")}>REJOINDRE PAR CODE</button>
+          <button className="casinoBtn primary large" onClick={()=>openEntry("create")}>CRÉER UNE TABLE</button>
+          <button className="casinoBtn ghost large" onClick={()=>openEntry("join")}>REJOINDRE PAR CODE</button>
         </div>
         <div className="heroStats">
           <div><b>3</b><span>jeux</span></div>
@@ -111,7 +118,7 @@ export default function Home(){
         {games.map(g=><button
           key={g.id}
           className={`gameCard ${g.accent} ${gameType===g.id?"selected":""}`}
-          onClick={()=>{setGameType(g.id);setMode("create");}}
+          onClick={()=>{setGameType(g.id);openEntry("create");}}
         >
           <span className="gameIcon">{g.icon}</span>
           <span className="gameTag">{g.tag}</span>
@@ -122,7 +129,7 @@ export default function Home(){
       </div>
     </section>
 
-    <section className="entrySection">
+    <section className="entrySection" id="entry">
       <div className="entryIntro">
         <span className="eyebrow">{mode==="create"?"OUVRIR UNE TABLE":"ENTRER DANS UNE ROOM"}</span>
         <h2>{mode==="create"?selected.title:"Tu as déjà un code ?"}</h2>
