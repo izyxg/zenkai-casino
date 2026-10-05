@@ -53,7 +53,7 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
     }else if(action==="LOCK"){
       if(!player.isHost) throw new Error("Hôte uniquement");
       await prisma.room.update({where:{id:room.id},data:{locked:!!payload.locked}});
-      await logEvent(room.id,"ROOM",`${player.name} ${payload.locked?"verrouille":"déverrouille"} la room.`);
+      await logEvent(room.id,"ROOM",`${player.name} ${payload.locked?"verrouille":"déverrouille"} le salon.`);
     }else if(action==="RESET_BALANCES"){
       if(!player.isHost) throw new Error("Hôte uniquement");
       if(active) throw new Error("Impossible pendant une partie");
@@ -70,12 +70,12 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
       });
       if(!target||target.isHost) throw new Error("Joueur invalide");
       await prisma.player.delete({where:{id:target.id}});
-      await logEvent(room.id,"KICK",`${target.name} est expulsé de la room.`);
+      await logEvent(room.id,"KICK",`${target.name} quitte la table sur décision de l’hôte.`);
     }else if(action==="CLOSE"){
       if(!player.isHost) throw new Error("Hôte uniquement");
-      if(active) throw new Error("Terminez la partie avant de fermer la room");
+      if(active) throw new Error("Terminez la partie avant de fermer le salon");
       await prisma.room.update({where:{id:room.id},data:{status:"CLOSED",locked:true}});
-      await logEvent(room.id,"CLOSE",`${player.name} ferme la room.`);
+      await logEvent(room.id,"CLOSE",`${player.name} ferme le salon.`);
     }else{
       throw new Error("Action inconnue");
     }
