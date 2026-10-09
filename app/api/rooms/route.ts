@@ -11,10 +11,12 @@ const schema=z.object({
   gameType:z.enum(["COINFLIP","BLACKJACK","POKER"]),
   minBet:z.coerce.number().int().min(1),
   maxBet:z.coerce.number().int().min(1),
-  maxPlayers:z.coerce.number().int().min(2).max(8),
+  maxPlayers:z.coerce.number().int().min(2).max(9),
   startingBalance:z.coerce.number().int().min(100),
   blackjackDealerMode:z.enum(["AUTO","HOST"]).optional().default("AUTO")
-}).refine(x=>x.maxBet>=x.minBet,{message:"La mise max doit être supérieure à la mise min"});
+})
+  .refine(x=>x.maxBet>=x.minBet,{message:"La mise max doit être supérieure à la mise min"})
+  .refine(x=>x.gameType==="BLACKJACK"||x.maxPlayers<=8,{message:"Ce jeu est limité à 8 joueurs maximum"});
 
 export async function POST(req:Request){
   try{
@@ -39,7 +41,7 @@ export async function POST(req:Request){
       blackjackDealerMode
     }=raw;
 
-    const roomMaxPlayers=gameType==="COINFLIP"?2:maxPlayers;
+    const roomMaxPlayers=gameType==="COINFLIP"?2:gameType==="BLACKJACK"?Math.min(maxPlayers,9):Math.min(maxPlayers,8);
 
     let code="";
     for(let i=0;i<10;i++){
