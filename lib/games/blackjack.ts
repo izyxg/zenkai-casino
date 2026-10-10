@@ -1,6 +1,7 @@
 import { prisma } from "../prisma";
+import type { Prisma } from "@prisma/client";
 import { blackjackValue, freshDeck, shuffle } from "../cards";
-import { resolveBlackjackHand } from "../blackjack-rules";
+import { chooseBlackjackDealerCard, resolveBlackjackHand } from "../blackjack-rules";
 import type { BlackjackState } from "../game-types";
 import { changeBalance, logEvent } from "./shared";
 
@@ -236,18 +237,26 @@ export async function blackjackAction(gameId:string,playerId:string,action:"HIT"
   await prisma.game.update({where:{id:game.id},data:{state:state as any}});
 }
 
-export async function blackjackDealerAction(gameId:string,playerId:string,action:"REVEAL"|"DRAW"|"SETTLE"){
+export async function blackjackDealerAction(gameId:string,playerId:string,action:"REVEAL"|"DRAW"|"SETTLE",card?:unknown){
   const game=await prisma.game.findUniqueOrThrow({where:{id:gameId}});
-  const state=game.state as unknown as BlackjackState;
+  const state=structuredClone(game.state) as unknown as BlackjackState;
 
-  if(state.kind!=="BLACKJACK"||state.settled) throw new Error("La manche est déjà terminée");
+  if(game.status!=="ACTIVE"||state.kind!=="BLACKJACK"||state.settled) throw new Error("La manche est déjà terminée");
   if(state.dealerMode!=="HOST"||state.dealerPlayerId!==playerId) throw new Error("Action réservée au croupier");
   if(state.dealerPhase!=="DEALER") throw new Error("Attends que tous les joueurs aient terminé");
+  if(!["REVEAL","DRAW","SETTLE"].includes(action)) throw new Error("Action croupier inconnue");
+
+  async function saveChoice(){
+    const saved=await prisma.game.updateMany({
+      where:{id:game.id,status:"ACTIVE",state:{equals:game.state as Prisma.InputJsonObject}},
+      data:{state:state as any}
+    });
+    if(saved.count!==1) throw new Error("La main a changé. Actualise la table avant de choisir une carte.");
+  }
 
   if(action==="REVEAL"){
-    if(state.dealerRevealed) throw new Error("La carte cachée est déjà révélée");
-    state.dealerRevealed=true;
-    await prisma.game.update({where:{id:game.id},data:{state:state as any}});
+    chooseBlackjackDealerCard(state,"REVEAL",card);
+    await saveChoice();
     await logEvent(
       game.roomId,
       "BLACKJACK_DEALER",
@@ -262,10 +271,9 @@ export async function blackjackDealerAction(gameId:string,playerId:string,action
   const value=blackjackValue(state.dealer);
 
   if(action==="DRAW"){
-    if(value>=17) throw new Error("À 17 ou plus, le croupier doit rester");
-    state.dealer.push(state.deck.pop()!);
+    chooseBlackjackDealerCard(state,"DRAW",card);
     const nextValue=blackjackValue(state.dealer);
-    await prisma.game.update({where:{id:game.id},data:{state:state as any}});
+    await saveChoice();
     await logEvent(
       game.roomId,
       "BLACKJACK_DEALER",

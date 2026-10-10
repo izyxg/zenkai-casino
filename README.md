@@ -9,6 +9,7 @@ Maison de jeu **100 % RP** pour Zenkai, sous le nom **Le Cercle du Ryô**. Les R
 - Solde virtuel par room + ledger de transactions
 - Pile ou Face serveur-authoritaire
 - Blackjack multijoueur contre le croupier
+- En mode croupier hôte, menu de sélection de la carte révélée puis des cartes tirées ; seules les cartes disponibles peuvent être choisies
 - Texas Hold'em 2 à 8 joueurs avec blinds, check/call/raise/fold/all-in, showdown et side pots
 - Journal RP copiable
 - Contrôles hôte : verrouillage, reset des soldes, fermeture
@@ -49,7 +50,9 @@ Pour rester simple et compatible avec l'hébergement serverless Vercel, le MVP u
 ## Sécurité / fair-play
 
 - Les tirages aléatoires utilisent `crypto.randomInt` côté serveur.
-- Le client ne décide jamais d'une carte, d'un gagnant ou d'un paiement.
+- En mode automatique, les cartes sont tirées côté serveur. En mode croupier hôte, l'hôte choisit ses cartes dans un menu ; le serveur vérifie son rôle, le tour, la disponibilité de la carte et la règle des 17 points.
+- Le menu est réservé au croupier hôte ; les autres joueurs et le journal public voient les révélations et tirages habituels, sans mention du choix manuel. Les joueurs ne choisissent jamais leurs propres cartes, les gagnants ou les paiements.
+- Le paquet de Blackjack n'est pas exposé dans les réponses API ; seule la liste sans ordre des cartes sélectionnables est fournie au croupier hôte pendant son tour.
 - Les cartes privées de poker des autres joueurs sont masquées dans les réponses API jusqu'au showdown.
 - Chaque joueur dispose d'un token de session temporaire ; seul son hash SHA-256 est stocké.
 - Les mouvements de Ryôs sont enregistrés dans `Transaction`.

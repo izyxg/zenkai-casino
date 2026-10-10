@@ -1740,3 +1740,53 @@ button:disabled{cursor:not-allowed}
   55%{transform:scale(1.08);opacity:1;box-shadow:0 0 18px rgba(184,70,60,.18)}
   100%{transform:scale(1);opacity:1}
 }
+
+/* Host-only manual dealer card selection. */
+.dealerCardDialog{
+  width:min(440px,calc(100% - 24px));max-height:calc(100dvh - 24px);
+  margin:auto;padding:20px;border:1px solid var(--line-strong);border-radius:8px;
+  background:var(--panel);color:var(--text);box-shadow:var(--shadow);overflow:auto;
+  letter-spacing:0
+}
+.dealerCardDialog::backdrop{background:rgba(0,0,0,.72)}
+.dealerCardHeader{margin-bottom:16px}
+.dealerCardHeader>span{font-size:10px;color:var(--gold)}
+.dealerCardHeader h2{font:500 22px Georgia,serif;margin:6px 0;overflow-wrap:anywhere}
+.dealerCardHeader small{font-size:12px;color:var(--muted)}
+.dealerSuitTabs{border:0;padding:0;margin:0 0 16px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;min-width:0}
+.dealerSuitTabs legend{font-size:12px;color:var(--muted);margin-bottom:8px}
+.dealerSuitTabs label{position:relative;cursor:pointer;min-width:0}
+.dealerSuitTabs input{position:absolute;opacity:0;width:1px;height:1px}
+.dealerSuitTabs label>span{
+  min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  border:1px solid var(--line);border-radius:6px;font-size:11px;background:var(--bg-soft)
+}
+.dealerSuitTabs b{font:22px Georgia,serif;line-height:1}
+.dealerSuitTabs .red b{color:var(--red-hi)}
+.dealerSuitTabs input:checked+span{border-color:var(--gold);color:var(--gold-hi)}
+.dealerSuitTabs input:focus-visible+span{outline:2px solid var(--gold-hi);outline-offset:2px}
+.dealerSuitTabs:disabled{opacity:.6}
+.dealerCardGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.dealerCardOption{
+  height:80px;display:grid;place-items:center;padding:6px;border:1px solid transparent;
+  border-radius:6px;background:var(--bg-soft);cursor:pointer
+}
+.dealerCardOption:hover:not(:disabled){border-color:var(--gold)}
+.dealerCardOption[aria-pressed="true"]{border-color:#80cda0;background:var(--green)}
+.dealerCardOption:focus-visible,.dealerCardFooter button:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+.dealerCardOption:disabled{opacity:.24;cursor:not-allowed}
+.dealerCardDialog .playingCard.mini{width:42px;height:59px;animation:none}
+.dealerCardFooter{
+  display:grid;grid-template-columns:minmax(0,1fr) 86px 86px;align-items:center;gap:8px;
+  margin-top:16px;padding-top:14px;border-top:1px solid var(--line)
+}
+.dealerCardFooter>span{min-height:64px;display:flex;align-items:center;font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.dealerCardFooter .casinoBtn{padding:10px 12px;min-height:42px;border-radius:6px;letter-spacing:0}
+.dealerCardEmpty{font-size:12px;color:var(--muted)}
+.dealerCardError{font-size:12px;color:#ffc3bb;overflow-wrap:anywhere;line-height:1.5}
+@media(max-width:380px){
+  .dealerCardDialog{padding:14px}
+  .dealerCardGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .dealerCardFooter{grid-template-columns:1fr 1fr}
+  .dealerCardFooter>span{grid-column:1/-1;min-height:60px}
+}

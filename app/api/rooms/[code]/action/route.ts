@@ -46,7 +46,7 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
       await blackjackAction(active.id,player.id,payload.move);
     }else if(action==="BLACKJACK_DEALER"){
       if(!active) throw new Error("Aucune partie active");
-      await blackjackDealerAction(active.id,player.id,payload.move);
+      await blackjackDealerAction(active.id,player.id,payload.move,payload.card);
     }else if(action==="POKER"){
       if(!active) throw new Error("Aucune partie active");
       await pokerAction(active.id,player.id,payload.move,payload.amount?Number(payload.amount):undefined);

@@ -147,7 +147,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
           </button>
         </div>
 
-        <GamePanel snap={snap} me={me} act={act} busy={busy}/>
+        <GamePanel snap={snap} me={me} act={act} busy={busy} error={error}/>
 
         {me.isHost&&<section className="hostDeck">
           <div className="hostDeckTitle">
