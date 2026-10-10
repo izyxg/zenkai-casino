@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CardView } from "./CardView";
 import { PlayerSeat } from "./PlayerSeat";
 import { ChipStack, CHIP_DENOMS } from "./ChipStack";
+import { DealerCardPicker } from "./DealerCardPicker";
 
 const fmt=(n:number)=>Number(n||0).toLocaleString("fr-FR");
 
@@ -57,11 +58,13 @@ export default function GamePanel({
   snap,
   me,
   act,
+  error="",
   busy=false
 }:{
   snap:any;
   me:any;
   act:(action:string,payload?:any)=>Promise<void>;
+  error?:string;
   busy?:boolean;
 }){
   const game=snap.game;
@@ -69,6 +72,19 @@ export default function GamePanel({
   const [raise,setRaise]=useState(snap.minBet*2);
   const [dismissedResult,setDismissedResult]=useState<string|null>(null);
   const [clock,setClock]=useState(Date.now());
+  const [dealerChoice,setDealerChoice]=useState<{gameId:string;move:"REVEAL"|"DRAW";count:number}|null>(null);
+
+  useEffect(()=>{
+    setDealerChoice(choice=>{
+      if(!choice) return null;
+      const state=game?.state;
+      if(game?.id!==choice.gameId||game?.status!=="ACTIVE"||state?.kind!=="BLACKJACK"||
+        state.dealerMode!=="HOST"||state.dealerPlayerId!==me.id||state.dealerPhase!=="DEALER"||
+        state.dealer.length!==choice.count||state.dealerRevealed!==(choice.move==="DRAW")) return null;
+      return choice;
+    });
+  },[game?.id,game?.status,game?.state?.kind,game?.state?.dealerMode,game?.state?.dealerPlayerId,
+    game?.state?.dealerPhase,game?.state?.dealer?.length,game?.state?.dealerRevealed,me.id]);
 
   useEffect(()=>{
     if(me.currentBet) setBet(me.currentBet);
@@ -321,7 +337,7 @@ export default function GamePanel({
           </div>
           <small>
             {hostDealer
-              ?"Tu ne mises pas : tu révèles, tires et règles la banque. Les cartes restent décidées par le serveur."
+              ?"Croupier hôte : choix manuel des cartes de la banque."
               :"La maison révèle et joue sa main automatiquement après le dernier joueur."}
           </small>
         </div>}
@@ -658,11 +674,11 @@ export default function GamePanel({
           <small>{dealerValue===null?"Valeur masquée":(dealerValue??0)+" points"}</small>
         </div>
         {!s.dealerRevealed
-          ?<button disabled={busy} className="dealerBigAction reveal" onClick={()=>act("BLACKJACK_DEALER",{move:"REVEAL"})}>
+          ?<button disabled={busy} className="dealerBigAction reveal" onClick={()=>setDealerChoice({gameId:game.id,move:"REVEAL",count:s.dealer.length})}>
             <span>↻</span><b>RÉVÉLER</b><small>Retourner la carte cachée</small>
           </button>
           :<>
-            <button disabled={busy||(dealerValue??0)>=17} className="dealerBigAction draw" onClick={()=>act("BLACKJACK_DEALER",{move:"DRAW"})}>
+            <button disabled={busy||(dealerValue??0)>=17} className="dealerBigAction draw" onClick={()=>setDealerChoice({gameId:game.id,move:"DRAW",count:s.dealer.length})}>
               <span>＋</span><b>TIRER</b><small>Obligatoire sous 17</small>
             </button>
             <button disabled={busy||(dealerValue??0)<17} className="dealerBigAction settle" onClick={()=>act("BLACKJACK_DEALER",{move:"SETTLE"})}>
@@ -670,6 +686,18 @@ export default function GamePanel({
             </button>
           </>}
       </div>}
+
+      {isDealer&&game.status==="ACTIVE"&&s.dealerPhase==="DEALER"&&dealerChoice&&dealerChoice.gameId===game.id&&
+        dealerChoice.count===s.dealer.length&&s.dealerRevealed===(dealerChoice.move==="DRAW")&&
+        <DealerCardPicker
+          key={game.id+":"+dealerChoice.move+":"+dealerChoice.count}
+          move={dealerChoice.move}
+          cards={s.dealerAvailableCards??[]}
+          busy={busy}
+          error={error}
+          onChoose={card=>act("BLACKJACK_DEALER",{move:dealerChoice.move,card})}
+          onClose={()=>setDealerChoice(null)}
+        />}
 
       {!myHand&&game.status==="ACTIVE"&&!isDealer&&<div className="spectatorHint blackjackSpectator">
         <span>MODE SPECTATEUR</span>

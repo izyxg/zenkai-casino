@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { blackjackValue, type Card } from "./cards";
+import { blackjackDealerChoices } from "./blackjack-rules";
 import type { AnyGameState, BlackjackState, CoinState, PokerState } from "./game-types";
 import { newCoinState, coinCommit } from "./games/coinflip";
 import { newBlackjackState, blackjackAction, blackjackDealerAction, settleBlackjack } from "./games/blackjack";
@@ -9,7 +10,12 @@ export { coinCommit, blackjackAction, blackjackDealerAction, pokerAction };
 
 export function publicGameState(state:AnyGameState,viewerId:string){
   if(state.kind==="BLACKJACK"){
-    const s=structuredClone(state) as BlackjackState;
+    const s=structuredClone(state) as BlackjackState&{dealerAvailableCards?:Card[]};
+    delete s.dealerAvailableCards;
+    if(!s.settled&&s.dealerMode==="HOST"&&s.dealerPlayerId===viewerId&&s.dealerPhase==="DEALER"){
+      s.dealerAvailableCards=blackjackDealerChoices(s);
+    }
+    s.deck=[];
     if(!s.settled&&!s.dealerRevealed&&s.dealer.length>1){
       s.dealer=[s.dealer[0],"??" as Card];
     }
