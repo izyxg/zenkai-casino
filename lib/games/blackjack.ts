@@ -238,13 +238,15 @@ export async function blackjackAction(gameId:string,playerId:string,action:"HIT"
 }
 
 export async function blackjackDealerAction(gameId:string,playerId:string,action:"REVEAL"|"DRAW"|"SETTLE",card?:unknown){
-  const game=await prisma.game.findUniqueOrThrow({where:{id:gameId}});
+  const game=await prisma.game.findUniqueOrThrow({where:{id:gameId},include:{room:true}});
   const state=structuredClone(game.state) as unknown as BlackjackState;
 
   if(game.status!=="ACTIVE"||state.kind!=="BLACKJACK"||state.settled) throw new Error("La manche est déjà terminée");
   if(state.dealerMode!=="HOST"||state.dealerPlayerId!==playerId) throw new Error("Action réservée au croupier");
   if(state.dealerPhase!=="DEALER") throw new Error("Attends que tous les joueurs aient terminé");
   if(!["REVEAL","DRAW","SETTLE"].includes(action)) throw new Error("Action croupier inconnue");
+  const canChoose=game.room.dealerCardChoiceEnabled===true;
+  if(!canChoose&&card!==undefined) throw new Error("Choix de carte indisponible");
 
   async function saveChoice(){
     const saved=await prisma.game.updateMany({
@@ -255,7 +257,13 @@ export async function blackjackDealerAction(gameId:string,playerId:string,action
   }
 
   if(action==="REVEAL"){
-    chooseBlackjackDealerCard(state,"REVEAL",card);
+    if(canChoose){
+      chooseBlackjackDealerCard(state,"REVEAL",card);
+    }else{
+      if(state.dealerRevealed) throw new Error("La carte cachée est déjà révélée");
+      if(!state.dealer[1]) throw new Error("Carte cachée introuvable");
+      state.dealerRevealed=true;
+    }
     await saveChoice();
     await logEvent(
       game.roomId,
@@ -271,7 +279,14 @@ export async function blackjackDealerAction(gameId:string,playerId:string,action
   const value=blackjackValue(state.dealer);
 
   if(action==="DRAW"){
-    chooseBlackjackDealerCard(state,"DRAW",card);
+    if(canChoose){
+      chooseBlackjackDealerCard(state,"DRAW",card);
+    }else{
+      if(value>=17) throw new Error("À 17 ou plus, le croupier doit rester");
+      const next=state.deck.pop();
+      if(!next) throw new Error("Pioche vide");
+      state.dealer.push(next);
+    }
     const nextValue=blackjackValue(state.dealer);
     await saveChoice();
     await logEvent(

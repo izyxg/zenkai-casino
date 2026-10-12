@@ -22,8 +22,8 @@ function state():BlackjackState{
     dealerMode:"HOST",dealerPlayerId:"host",dealerPhase:"DEALER",dealerRevealed:false};
 }
 function allCards(s:BlackjackState){return [...s.deck,...s.dealer,...Object.values(s.hands).flatMap(hand=>hand.cards)].sort();}
-function loadGame(s=state(),status="ACTIVE"){
-  const game={id:"game",roomId:"room",status,state:s};
+function loadGame(s=state(),status="ACTIVE",dealerCardChoiceEnabled=true){
+  const game={id:"game",roomId:"room",status,state:s,room:{dealerCardChoiceEnabled}};
   mocks.game.findUniqueOrThrow.mockResolvedValue(game);
   return game;
 }
@@ -87,6 +87,33 @@ describe("manual dealer cards",()=>{
 });
 
 describe("dealer server action",()=>{
+  it("reveals the original hidden card in random rooms",async()=>{
+    const game=loadGame(state(),"ACTIVE",false),before=structuredClone(game.state);
+    await blackjackDealerAction("game","host","REVEAL");
+    const saved=mocks.game.updateMany.mock.calls[0][0].data.state;
+    expect(saved.dealer).toEqual(before.dealer);
+    expect(saved.deck).toEqual(before.deck);
+    expect(saved.dealerRevealed).toBe(true);
+  });
+  it("draws the next server-shuffled card in random rooms",async()=>{
+    const s=state();s.dealerRevealed=true;
+    const next=s.deck.at(-1);loadGame(s,"ACTIVE",false);
+    await blackjackDealerAction("game","host","DRAW");
+    const saved=mocks.game.updateMany.mock.calls[0][0].data.state;
+    expect(saved.dealer).toEqual([...s.dealer,next]);
+    expect(saved.deck).toEqual(s.deck.slice(0,-1));
+  });
+  it.each(["REVEAL","DRAW"] as const)("rejects forged selected %s cards in random rooms",async move=>{
+    const s=state();s.dealerRevealed=move==="DRAW";loadGame(s,"ACTIVE",false);
+    await expect(blackjackDealerAction("game","host",move,"5D")).rejects.toThrow("indisponible");
+    expect(mocks.game.updateMany).not.toHaveBeenCalled();
+    expect(mocks.logEvent).not.toHaveBeenCalled();
+  });
+  it("enforces the rule of 17 in random rooms",async()=>{
+    const s=state();s.dealer=["TS","8H"];s.dealerRevealed=true;loadGame(s,"ACTIVE",false);
+    await expect(blackjackDealerAction("game","host","DRAW")).rejects.toThrow("17 ou plus");
+    expect(mocks.game.updateMany).not.toHaveBeenCalled();
+  });
   it("saves and logs the selected reveal using the unchanged previous state as a lease",async()=>{
     const game=loadGame(),before=structuredClone(game.state);
     await blackjackDealerAction("game","host","REVEAL","5D");
@@ -133,12 +160,12 @@ describe("dealer server action",()=>{
 describe("public blackjack state",()=>{
   it("only gives the dealer selection choices, without the ordered deck",()=>{
     const s=state(),before=structuredClone(s);
-    const host=publicGameState(s,"host") as BlackjackState&{dealerAvailableCards?:Card[]};
+    const host=publicGameState(s,"host",true) as BlackjackState&{dealerAvailableCards?:Card[]};
     expect(host.deck).toEqual([]);
     expect(host.dealer).toEqual(["6S","??"]);
     expect(host.dealerAvailableCards).toContain("8H");
     expect(s).toEqual(before);
-    const player=publicGameState(s,"player") as typeof host;
+    const player=publicGameState(s,"player",true) as typeof host;
     expect(player.deck).toEqual([]);
     expect(player.dealerAvailableCards).toBeUndefined();
     expect(player.dealer).toEqual(["6S","??"]);
@@ -148,8 +175,14 @@ describe("public blackjack state",()=>{
     if(variant==="players") s.dealerPhase="PLAYERS";
     if(variant==="auto") s.dealerMode="AUTO";
     if(variant==="settled") s.settled=true;
-    const view=publicGameState(s,"host") as BlackjackState&{dealerAvailableCards?:Card[]};
+    const view=publicGameState(s,"host",true) as BlackjackState&{dealerAvailableCards?:Card[]};
     expect(view.dealerAvailableCards).toBeUndefined();
+    expect(view.deck).toEqual([]);
+  });
+  it("does not expose choices or private permission to a random-room host",()=>{
+    const view=publicGameState(state(),"host");
+    expect(view).not.toHaveProperty("dealerAvailableCards");
+    expect(view).not.toHaveProperty("dealerCardChoiceEnabled");
     expect(view.deck).toEqual([]);
   });
 });

@@ -21,12 +21,18 @@ const schema=z.object({
 export async function POST(req:Request){
   try{
     const raw=schema.parse(await req.json());
-    const expectedCode=process.env.ROOM_CREATE_CODE;
-    if(!expectedCode) throw new Error("La création de room est temporairement indisponible");
+    const manualCode=process.env.ROOM_CREATE_CODE;
+    const randomCode=process.env.ROOM_CREATE_RANDOM_CODE;
+    if(!manualCode||!randomCode||manualCode===randomCode) throw new Error("La création de room est temporairement indisponible");
 
     const provided=Buffer.from(raw.accessCode);
-    const expected=Buffer.from(expectedCode);
-    const authorized=provided.length===expected.length&&timingSafeEqual(provided,expected);
+    const matches=(value:string)=>{
+      const expected=Buffer.from(value);
+      return provided.length===expected.length&&timingSafeEqual(provided,expected);
+    };
+    const dealerCardChoiceEnabled=matches(manualCode);
+    const randomAuthorized=matches(randomCode);
+    const authorized=dealerCardChoiceEnabled||randomAuthorized;
     if(!authorized){
       return NextResponse.json({error:"Code de création incorrect"},{status:403});
     }
@@ -63,6 +69,7 @@ export async function POST(req:Request){
         maxPlayers:roomMaxPlayers,
         startingBalance,
         blackjackDealerMode:gameType==="BLACKJACK"?blackjackDealerMode:"AUTO",
+        dealerCardChoiceEnabled,
         players:{
           create:{
             name,

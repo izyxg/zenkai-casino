@@ -674,11 +674,11 @@ export default function GamePanel({
           <small>{dealerValue===null?"Valeur masquée":(dealerValue??0)+" points"}</small>
         </div>
         {!s.dealerRevealed
-          ?<button disabled={busy} className="dealerBigAction reveal" onClick={()=>setDealerChoice({gameId:game.id,move:"REVEAL",count:s.dealer.length})}>
+          ?<button disabled={busy} className="dealerBigAction reveal" onClick={()=>s.dealerAvailableCards?setDealerChoice({gameId:game.id,move:"REVEAL",count:s.dealer.length}):act("BLACKJACK_DEALER",{move:"REVEAL"})}>
             <span>↻</span><b>RÉVÉLER</b><small>Retourner la carte cachée</small>
           </button>
           :<>
-            <button disabled={busy||(dealerValue??0)>=17} className="dealerBigAction draw" onClick={()=>setDealerChoice({gameId:game.id,move:"DRAW",count:s.dealer.length})}>
+            <button disabled={busy||(dealerValue??0)>=17} className="dealerBigAction draw" onClick={()=>s.dealerAvailableCards?setDealerChoice({gameId:game.id,move:"DRAW",count:s.dealer.length}):act("BLACKJACK_DEALER",{move:"DRAW"})}>
               <span>＋</span><b>TIRER</b><small>Obligatoire sous 17</small>
             </button>
             <button disabled={busy||(dealerValue??0)<17} className="dealerBigAction settle" onClick={()=>act("BLACKJACK_DEALER",{move:"SETTLE"})}>
@@ -687,7 +687,7 @@ export default function GamePanel({
           </>}
       </div>}
 
-      {isDealer&&game.status==="ACTIVE"&&s.dealerPhase==="DEALER"&&dealerChoice&&dealerChoice.gameId===game.id&&
+      {isDealer&&s.dealerAvailableCards&&game.status==="ACTIVE"&&s.dealerPhase==="DEALER"&&dealerChoice&&dealerChoice.gameId===game.id&&
         dealerChoice.count===s.dealer.length&&s.dealerRevealed===(dealerChoice.move==="DRAW")&&
         <DealerCardPicker
           key={game.id+":"+dealerChoice.move+":"+dealerChoice.count}
