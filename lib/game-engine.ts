@@ -8,11 +8,11 @@ import { newPokerState, pokerAction } from "./games/poker";
 export { logEvent } from "./games/shared";
 export { coinCommit, blackjackAction, blackjackDealerAction, pokerAction };
 
-export function publicGameState(state:AnyGameState,viewerId:string){
+export function publicGameState(state:AnyGameState,viewerId:string,dealerCardChoiceEnabled=false){
   if(state.kind==="BLACKJACK"){
     const s=structuredClone(state) as BlackjackState&{dealerAvailableCards?:Card[]};
     delete s.dealerAvailableCards;
-    if(!s.settled&&s.dealerMode==="HOST"&&s.dealerPlayerId===viewerId&&s.dealerPhase==="DEALER"){
+    if(dealerCardChoiceEnabled&&!s.settled&&s.dealerMode==="HOST"&&s.dealerPlayerId===viewerId&&s.dealerPhase==="DEALER"){
       s.dealerAvailableCards=blackjackDealerChoices(s);
     }
     s.deck=[];

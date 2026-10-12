@@ -47,7 +47,7 @@ export async function roomSnapshot(code:string, viewerId:string){
       type:game.type,
       status:game.status,
       endedAt:game.endedAt,
-      state:publicGameState(game.state as any,viewerId)
+      state:publicGameState(game.state as any,viewerId,room.dealerCardChoiceEnabled)
     }:null,
     events:room.events.reverse().map(e=>({
       id:e.id,
