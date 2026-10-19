@@ -1791,7 +1791,7 @@ button:disabled{cursor:not-allowed}
   .dealerCardFooter>span{grid-column:1/-1;min-height:60px}
 }
 
-/* Duo des croupiers : Shuuto Nakae et son jeune disciple. Illustration AVIF avec transparence. */
+/* Duo des croupiers : Shuuto Nakae et son jeune disciple. Illustration PNG haute résolution avec transparence. */
 .premiumDealer.dealerFigure,
 .premiumDealer.staticDealer {
   width: 235px !important;
@@ -1799,7 +1799,7 @@ button:disabled{cursor:not-allowed}
   left: 50% !important;
   top: -44px !important;
   transform: translateX(-50%) !important;
-  background: url("/dealer-duo.avif") center bottom / contain no-repeat !important;
+  background: url("/dealer-duo.png") center bottom / contain no-repeat !important;
   filter: drop-shadow(0 8px 12px rgba(0,0,0,.55)) !important;
   opacity: .88 !important;
   pointer-events: none;
