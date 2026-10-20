@@ -87,8 +87,9 @@ export default function GamePanel({
     game?.state?.dealerPhase,game?.state?.dealer?.length,game?.state?.dealerRevealed,me.id]);
 
   useEffect(()=>{
-    if(me.currentBet) setBet(me.currentBet);
-  },[me.currentBet]);
+    // Refresh the choice after the host updates our wallet (and clears any old wager).
+    setBet(me.currentBet>0?me.currentBet:Math.min(snap.minBet,me.balance));
+  },[me.currentBet,me.balance,snap.minBet]);
 
   useEffect(()=>{
     const state=game?.state;
@@ -222,10 +223,21 @@ export default function GamePanel({
 
               <div className="selectedBetStack">
                 <ChipStack amount={bet} compact={false}/>
-                <div>
-                  <span>TA MISE</span>
-                  <b>{fmt(bet)}</b>
-                  <small>Ryôs</small>
+                <div className="betAmountField">
+                  <label htmlFor="blackjack-bet-amount">TA MISE</label>
+                  <input
+                    id="blackjack-bet-amount"
+                    aria-label="Montant exact de ta mise en Ryôs"
+                    type="number"
+                    inputMode="numeric"
+                    min={snap.minBet}
+                    max={maxPlayable}
+                    step="1"
+                    disabled={busy}
+                    value={bet}
+                    onChange={e=>setBet(Number(e.target.value))}
+                  />
+                  <small>Ryôs • max. {fmt(maxPlayable)}</small>
                 </div>
               </div>
 
@@ -255,7 +267,7 @@ export default function GamePanel({
 
               <div className="bettingLaunchColumn">
                 <button
-                  disabled={busy||bet<snap.minBet||bet>maxPlayable}
+                  disabled={busy||!Number.isSafeInteger(bet)||bet<snap.minBet||bet>maxPlayable}
                   className="confirmBetButton"
                   onClick={()=>act("SET_BET",{bet})}
                 >

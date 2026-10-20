@@ -221,7 +221,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
                     <button type="submit" disabled={busy}>Valider</button>
                     <button type="button" disabled={busy} onClick={()=>setEditingBalance(null)}>Annuler</button>
                   </div>
-                  <small>Le joueur devra reconfirmer sa mise après modification.</small>
+                  <small>Le joueur devra reconfirmer sa mise. Si le nouveau solde dépasse la mise max, le plafond augmente pour toute la table.</small>
                 </form>}
               </div>;
             })}

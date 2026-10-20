@@ -66,24 +66,36 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
 
       // Update the wallet, transaction ledger and room journal atomically.
       await prisma.$transaction(async tx=>{
-        const currentRoom=await tx.room.findUnique({where:{id:room.id},select:{status:true}});
+        const currentRoom=await tx.room.findUnique({where:{id:room.id},select:{status:true,maxBet:true}});
         if(!currentRoom||currentRoom.status!=="LOBBY") throw new Error("La table doit être ouverte et hors partie");
         const runningGame=await tx.game.findFirst({where:{roomId:room.id,status:"ACTIVE"},select:{id:true}});
         if(runningGame) throw new Error("Impossible de modifier un solde pendant une partie");
         const target=await tx.player.findFirst({where:{id:targetId,roomId:room.id}});
         if(!target) throw new Error("Joueur introuvable dans ce salon");
         const delta=balance-target.balance;
-        if(delta===0) return;
-        // An existing bet is cleared: the player must reconfirm it after adjustment.
-        await tx.player.update({where:{id:target.id},data:{balance,currentBet:0}});
-        await tx.transaction.create({data:{
-          roomId:room.id,playerId:target.id,amount:delta,balanceAfter:balance,
-          type:"HOST_ADJUST",reason:`Ajustement du solde par ${player.name}`
-        }});
+        const increasedLimit=balance>currentRoom.maxBet;
+        if(delta===0&&!increasedLimit) return;
+        // The table's maximum stake follows host-granted wallet amounts.
+        // The new limit applies consistently to every player in the room.
+        if(increasedLimit){
+          await tx.room.update({where:{id:room.id},data:{maxBet:balance}});
+        }
+        if(delta!==0){
+          // The player must reconfirm any pending wager after an adjustment.
+          await tx.player.update({where:{id:target.id},data:{balance,currentBet:0}});
+          await tx.transaction.create({data:{
+            roomId:room.id,playerId:target.id,amount:delta,balanceAfter:balance,
+            type:"HOST_ADJUST",reason:`Ajustement du solde par ${player.name}`
+          }});
+        }
         await tx.gameEvent.create({data:{
-          roomId:room.id,type:"BALANCE_ADJUST",
-          message:`${player.name} règle le solde de ${target.name} à ${balance.toLocaleString("fr-FR")} Ryôs.`,
-          payload:{playerId:target.id,previousBalance:target.balance,newBalance:balance,delta}
+          roomId:room.id,type:delta===0?"BET_LIMIT_ADJUST":"BALANCE_ADJUST",
+          message:delta===0
+            ?`${player.name} relève la mise maximale à ${balance.toLocaleString("fr-FR")} Ryôs.`
+            :`${player.name} règle le solde de ${target.name} à ${balance.toLocaleString("fr-FR")} Ryôs.`+
+              (increasedLimit?` Mise maximale : ${balance.toLocaleString("fr-FR")} Ryôs.`:""),
+          payload:{playerId:target.id,previousBalance:target.balance,newBalance:balance,delta,
+            ...(increasedLimit?{previousMaxBet:currentRoom.maxBet,newMaxBet:balance}:{})}
         }});
       });
     }else if(action==="RESET_BALANCES"){

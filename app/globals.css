@@ -1839,3 +1839,19 @@ button:disabled{cursor:not-allowed}
 .balanceEditorControls button:disabled{opacity:.5;cursor:wait}
 .balanceEditor small{color:#897b65;font-size:9px;line-height:1.4}
 @media(max-width:560px){.balanceEditorControls{gap:5px}.balanceEditorControls button{min-height:34px}}
+
+/* Blackjack: exact manual wager entry, including new host-granted wallets. */
+.selectedBetStack .betAmountField{min-width:0;display:flex;flex-direction:column;gap:4px;flex:1}
+.selectedBetStack .betAmountField label{color:#a68f62;font-size:7px;font-weight:800;letter-spacing:.12em}
+.selectedBetStack .betAmountField input{
+  appearance:textfield;-moz-appearance:textfield;display:block;
+  width:100%;min-width:0;max-width:120px;height:34px;padding:4px 5px;
+  background:#16120d;border:1px solid #6a5030;border-radius:7px;
+  color:#f0d396;font:600 14px Georgia,serif;
+}
+.selectedBetStack .betAmountField input::-webkit-outer-spin-button,
+.selectedBetStack .betAmountField input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.selectedBetStack .betAmountField input:focus{outline:1px solid #e0b865;outline-offset:1px}
+.selectedBetStack .betAmountField input:disabled{opacity:.65}
+.selectedBetStack .betAmountField small{font-size:7px;color:#9b896a;line-height:1.2}
+@media(max-width:560px){.selectedBetStack .betAmountField input{height:32px;font-size:13px}}

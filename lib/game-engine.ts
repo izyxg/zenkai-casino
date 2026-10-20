@@ -32,6 +32,7 @@ export function publicGameState(state:AnyGameState,viewerId:string,dealerCardCho
 }
 
 export async function setBet(playerId:string,bet:number){
+  if(!Number.isSafeInteger(bet)||bet<1) throw new Error("La mise doit être un nombre entier positif");
   const p=await prisma.player.findUniqueOrThrow({where:{id:playerId},include:{room:true}});
   if(p.room.status==="CLOSED") throw new Error("Room fermée");
   if(p.room.status==="ACTIVE") throw new Error("Impossible de modifier la mise pendant une manche");
