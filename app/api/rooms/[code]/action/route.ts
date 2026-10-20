@@ -54,6 +54,38 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
       if(!player.isHost) throw new Error("Hôte uniquement");
       await prisma.room.update({where:{id:room.id},data:{locked:!!payload.locked}});
       await logEvent(room.id,"ROOM",`${player.name} ${payload.locked?"verrouille":"déverrouille"} le salon.`);
+    }else if(action==="SET_PLAYER_BALANCE"){
+      if(!player.isHost) throw new Error("Action réservée à l'hôte");
+      if(room.status==="CLOSED") throw new Error("Salon fermé");
+      if(active) throw new Error("Impossible de modifier un solde pendant une partie");
+      const targetId=payload?.playerId;
+      const balance=payload?.balance;
+      if(typeof targetId!=="string"||!Number.isSafeInteger(balance)||balance<0||balance>1_000_000_000){
+        throw new Error("Joueur ou solde invalide (0 à 1 milliard de Ryôs)");
+      }
+
+      // Update the wallet, transaction ledger and room journal atomically.
+      await prisma.$transaction(async tx=>{
+        const currentRoom=await tx.room.findUnique({where:{id:room.id},select:{status:true}});
+        if(!currentRoom||currentRoom.status!=="LOBBY") throw new Error("La table doit être ouverte et hors partie");
+        const runningGame=await tx.game.findFirst({where:{roomId:room.id,status:"ACTIVE"},select:{id:true}});
+        if(runningGame) throw new Error("Impossible de modifier un solde pendant une partie");
+        const target=await tx.player.findFirst({where:{id:targetId,roomId:room.id}});
+        if(!target) throw new Error("Joueur introuvable dans ce salon");
+        const delta=balance-target.balance;
+        if(delta===0) return;
+        // An existing bet is cleared: the player must reconfirm it after adjustment.
+        await tx.player.update({where:{id:target.id},data:{balance,currentBet:0}});
+        await tx.transaction.create({data:{
+          roomId:room.id,playerId:target.id,amount:delta,balanceAfter:balance,
+          type:"HOST_ADJUST",reason:`Ajustement du solde par ${player.name}`
+        }});
+        await tx.gameEvent.create({data:{
+          roomId:room.id,type:"BALANCE_ADJUST",
+          message:`${player.name} règle le solde de ${target.name} à ${balance.toLocaleString("fr-FR")} Ryôs.`,
+          payload:{playerId:target.id,previousBalance:target.balance,newBalance:balance,delta}
+        }});
+      });
     }else if(action==="RESET_BALANCES"){
       if(!player.isHost) throw new Error("Hôte uniquement");
       if(active) throw new Error("Impossible pendant une partie");

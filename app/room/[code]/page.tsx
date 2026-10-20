@@ -20,6 +20,8 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
   const [busy,setBusy]=useState(false);
   const [railTab,setRailTab]=useState<"players"|"log">("players");
   const [copied,setCopied]=useState("");
+  const [editingBalance,setEditingBalance]=useState<string|null>(null);
+  const [balanceInput,setBalanceInput]=useState("");
   const actionLock=useRef(false);
   const requestSeq=useRef(0);
 
@@ -62,7 +64,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
   },[error]);
 
   async function act(action:string,payload:any={}){
-    if(!session||actionLock.current) return;
+    if(!session||actionLock.current) return false;
     actionLock.current=true;
     requestSeq.current++;
     setBusy(true);
@@ -78,8 +80,10 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
       if(!response.ok) throw new Error(data.error);
       requestSeq.current++;
       if(data.snapshot) setSnap(data.snapshot);
+      return true;
     }catch(e:any){
       setError(e.message);
+      return false;
     }finally{
       actionLock.current=false;
       setBusy(false);
@@ -190,7 +194,35 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
                   <span>{p.currentBet>0?`${p.currentBet.toLocaleString("fr-FR")} Ryôs misés`:"Aucune mise"}</span>
                 </div>
                 <div className="railBalance">{p.balance.toLocaleString("fr-FR")}<small>Ryôs</small></div>
-                {me.isHost&&!p.isHost&&!isActive&&<button disabled={busy} className="kickBtn" onClick={()=>act("KICK",{playerId:p.id})} title="Expulser">×</button>}
+                {me.isHost&&<div className="railPlayerTools">
+                  <button type="button" disabled={busy||isActive||snap.status==="CLOSED"} className="balanceEditBtn"
+                    onClick={()=>{setEditingBalance(editingBalance===p.id?null:p.id);setBalanceInput(String(p.balance));}}
+                    title={isActive?"Disponible entre les manches":"Modifier le solde de "+p.name}
+                    aria-label={"Modifier le solde de "+p.name}>✎</button>
+                  {!p.isHost&&!isActive&&<button disabled={busy} className="kickBtn"
+                    onClick={()=>act("KICK",{playerId:p.id})} title="Expulser" aria-label={"Expulser "+p.name}>×</button>}
+                </div>}
+                {me.isHost&&editingBalance===p.id&&!isActive&&<form className="balanceEditor"
+                  onSubmit={async e=>{
+                    e.preventDefault();
+                    const value=Number(balanceInput);
+                    if(!/^\d+$/.test(balanceInput)||!Number.isSafeInteger(value)||value>1_000_000_000){
+                      setError("Saisis un solde entier entre 0 et 1 milliard de Ryôs.");
+                      return;
+                    }
+                    const ok=await act("SET_PLAYER_BALANCE",{playerId:p.id,balance:value});
+                    if(ok) setEditingBalance(null);
+                  }}>
+                  <label htmlFor={"balance-"+p.id}>Nouveau solde de {p.name}</label>
+                  <div className="balanceEditorControls">
+                    <input id={"balance-"+p.id} aria-label={"Nouveau solde de "+p.name} type="number"
+                      min="0" max="1000000000" step="1" required
+                      value={balanceInput} onChange={e=>setBalanceInput(e.target.value)}/>
+                    <button type="submit" disabled={busy}>Valider</button>
+                    <button type="button" disabled={busy} onClick={()=>setEditingBalance(null)}>Annuler</button>
+                  </div>
+                  <small>Le joueur devra reconfirmer sa mise après modification.</small>
+                </form>}
               </div>;
             })}
           </div>

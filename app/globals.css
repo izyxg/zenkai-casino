@@ -1823,3 +1823,19 @@ button:disabled{cursor:not-allowed}
   .premiumDealer.dealerFigure { top: -25px !important; width: 166px !important; height: 125px !important; }
   .premiumDealer.staticDealer { width: 192px !important; height: 137px !important; top: -22px !important; }
 }
+
+/* Adjustment of individual wallets by the table host (outside active rounds). */
+.railPlayerTools{display:flex;align-items:center;gap:5px}
+.railPlayerTools button{flex:0 0 auto;width:26px;height:26px;border-radius:7px;cursor:pointer}
+.railPlayerTools button:disabled{opacity:.35;cursor:not-allowed}
+.balanceEditBtn{border:1px solid rgba(204,166,99,.3);color:#e4c88b;background:#281f13;font-size:15px;line-height:1}
+.balanceEditBtn:hover:not(:disabled){border-color:#d3af71;background:#342718}
+.balanceEditor{grid-column:1/-1;min-width:0;padding:10px;border:1px solid rgba(204,166,99,.25);border-radius:9px;background:#17130d;display:grid;gap:7px}
+.balanceEditor label{font-size:10px;color:#d7c19c;font-weight:700}
+.balanceEditorControls{display:flex;gap:5px;align-items:stretch;min-width:0;flex-wrap:wrap}
+.balanceEditorControls input{flex:1 1 90px;width:90px;min-width:0;height:34px;padding:0 8px;background:#0b0a08;border:1px solid #5a4830;border-radius:7px;color:#f4e4bf;font-size:13px}
+.balanceEditorControls button{border-radius:7px;padding:0 9px;border:1px solid #594324;background:#2a2013;color:#e6c98b;font-size:10px;cursor:pointer}
+.balanceEditorControls button[type=submit]{background:#b88b44;color:#11100d;font-weight:800}
+.balanceEditorControls button:disabled{opacity:.5;cursor:wait}
+.balanceEditor small{color:#897b65;font-size:9px;line-height:1.4}
+@media(max-width:560px){.balanceEditorControls{gap:5px}.balanceEditorControls button{min-height:34px}}
