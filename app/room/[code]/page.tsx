@@ -151,7 +151,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
           </button>
         </div>
 
-        <GamePanel snap={snap} me={me} act={act} busy={busy} error={error}/>
+        <GamePanel snap={snap} me={me} act={async (action,payload)=>{await act(action,payload);}} busy={busy} error={error}/>
 
         {me.isHost&&<section className="hostDeck">
           <div className="hostDeckTitle">
