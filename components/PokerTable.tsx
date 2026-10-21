@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check, ChevronRight, CircleDollarSign, Flag, Layers3, Minus, Plus, X } from "lucide-react";
 import { CardView } from "./CardView";
+import { CardTable, TablePlayer } from "./CardTable";
 import { pokerControls, pokerPositions, pokerPots } from "@/lib/poker-view";
 import type { PokerState } from "@/lib/game-types";
 
@@ -28,25 +29,16 @@ export default function PokerTable({state:s,players,me,gameId,finished,busy,onAc
   const ownCards=s.hole[me.id]??[];
   const playerMap=new Map(players.map(p=>[p.id,p]));
   const pots=pokerPots(s);
-  // Rows stay in document flow so all 13 seats remain distinct at every size.
-  const split=Math.ceil(s.seats.length/2);
-  const renderSeats=(from:number,to:number)=><div className="pokerSeatsRow">
-    {s.seats.slice(from,to).map((seat,index)=>{
-      const i=from+index,p=playerMap.get(seat.playerId);
+  const myIndex=Math.max(0,s.seats.findIndex(seat=>seat.playerId===me.id));
+  const seats=[...s.seats.slice(myIndex),...s.seats.slice(0,myIndex)];
+  const tableSeats=seats.map(seat=>{
+      const i=s.seats.indexOf(seat),p=playerMap.get(seat.playerId);
       const active=!finished&&s.stage!=="SHOWDOWN"&&s.currentIndex===i;
-      return <article className={`pokerSeat ${seat.playerId===me.id?"mine":""} ${active?"active":""} ${seat.folded?"folded":""}`}
-        key={seat.playerId} aria-label={(p?.name??"Joueur")+(active?", à jouer":"")}>
-        <div className="pokerSeatTop"><strong title={p?.name}>{p?.name??"Joueur"}</strong>
-          <div>{pokerPositions(s,i).map(b=><abbr key={b} title={b==="D"?"Bouton":b==="SB"?"Petite blind":"Grosse blind"}>{b}</abbr>)}</div>
-        </div>
-        <div className="pokerSeatHand">{(s.hole[seat.playerId]??["??","??"]).map((card,j)=>
-          <CardView key={j+card} card={card} mini delay={j*80}/>)}</div>
-        <div className="pokerSeatWallet"><b>{fmt(p?.balance??0)}</b><small>Ryôs</small></div>
-        <div className="pokerSeatStatus">{seat.folded?"Couché":seat.allIn?"Tapis":active?"À jouer":seat.playerId===me.id?"Votre siège":"En jeu"}
-          {seat.roundBet>0&&<span>{fmt(seat.roundBet)} misés</span>}</div>
-      </article>;
-    })}
-  </div>;
+      return <TablePlayer key={seat.playerId} className="pokerSeat" name={p?.name??"Joueur"} balance={p?.balance}
+        isMe={seat.playerId===me.id} active={active} folded={seat.folded} bet={seat.roundBet}
+        cards={s.hole[seat.playerId]??["??","??"]} status={seat.folded?"Couché":seat.allIn?"Tapis":"En jeu"}
+        badges={pokerPositions(s,i).map(b=><abbr key={b} title={b==="D"?"Bouton":b==="SB"?"Petite blind":"Grosse blind"}>{b}</abbr>)}/>;
+    });
 
   return <section className="pokerExperience" aria-label="Table de Texas Hold'em">
     <header className="pokerHeading">
@@ -54,8 +46,7 @@ export default function PokerTable({state:s,players,me,gameId,finished,busy,onAc
       <div className={`pokerTurn ${turn?"yours":""}`} role="status"><i/>
         {finished?"Main terminée":turn?"À vous de jouer":activeName+" joue"}</div>
     </header>
-    <div className="pokerArena">
-      {renderSeats(0,split)}
+    <CardTable className="pokerArena" label="Tapis de poker" seats={tableSeats}>
       <div className="pokerBoard">
         <ol className="pokerStreets" aria-label="Avancement de la main">{stages.map((stage,i)=>
           <li key={stage} className={s.stage===stage?"current":s.board.length>=[0,3,4,5][i]?"dealt":""}>
@@ -70,8 +61,7 @@ export default function PokerTable({state:s,players,me,gameId,finished,busy,onAc
           {pots.length>1&&<span title={pots.map((pot,i)=>(i===0?"Principal":"Annexe "+i)+": "+fmt(pot)).join(" / ")}>{pots.length} tranches de pot</span>}
         </div>
       </div>
-      {renderSeats(split,s.seats.length)}
-    </div>
+    </CardTable>
     {!!s.winners?.length&&<div className="pokerWinners" role="status"><Flag size={20}/>
       <div>{s.winners.map(w=><p key={w.playerId}><b>{playerMap.get(w.playerId)?.name??"Joueur"}</b>
         <span>{w.label}</span><strong>+{fmt(w.amount)} Ryôs</strong></p>)}</div></div>}

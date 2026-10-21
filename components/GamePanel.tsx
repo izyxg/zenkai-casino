@@ -6,6 +6,7 @@ import {PlayerSeat} from "./PlayerSeat";
 import PokerTable from "./PokerTable";
 import BlackjackTable from "./BlackjackTable";
 import BlackjackLobby from "./BlackjackLobby";
+import {CardTable,TablePlayer} from "./CardTable";
 
 const fmt=(n:number)=>Number(n||0).toLocaleString("fr-FR");
 type Props={snap:any;me:any;act:(action:string,payload?:any)=>Promise<void>;error?:string;busy?:boolean};
@@ -26,14 +27,17 @@ export default function GamePanel({snap,me,act,error="",busy=false}:Props) {
     return <section className="tableWaiting">
       <header className="pokerHeading"><div><span className="eyebrow">LE CERCLE DU RYÔ</span>
         <h1>{poker?"Texas Hold’em":"Pile ou Face"}</h1></div><span className="pokerTurn"><i/>Table ouverte</span></header>
-      <div className="waitingTableArt"><Coins size={42}/><h2>{poker?"La prochaine main":"Le prochain duel"}</h2>
+      <CardTable className="tableLobby" label={poker?"Tapis de poker":"Table de duel"} seats={Array.from({length:Math.max(snap.players.length,Math.min(poker?6:2,snap.maxPlayers))},(_,i)=>{
+        const p=snap.players[i];
+        return <TablePlayer key={p?.id??"empty"+i} name={p?.name} balance={p?.balance} isMe={p?.id===me.id}
+          status={poker&&p?.balance<snap.minBet?"Solde insuffisant":p?.isHost?"Hôte":"Prêt"}/>;
+      })}>
+      <div className="waitingTableArt"><Coins size={32}/><h2>{poker?"Texas Hold’em":"Pile ou Face"}</h2>
         <p>{snap.players.length} joueurs installés · {snap.maxPlayers} sièges</p>
         {poker&&<div className="bjRuleTags"><span>Petite blind {fmt(snap.minBet)}</span>
           <span>Grosse blind {fmt(Math.min(snap.maxBet,snap.minBet*2))}</span></div>}
       </div>
-      <div className="waitingPlayerGrid">{snap.players.map((p:any)=><div key={p.id} className={p.id===me.id?"mine":""}>
-        <strong>{p.name}</strong><span>{fmt(p.balance)} Ryôs</span>
-        <small>{poker&&p.balance<snap.minBet?"Solde insuffisant":p.isHost?"Hôte":"Prêt"}</small></div>)}</div>
+      </CardTable>
       <div className="waitingTableFooter">{me.isHost?<button className="bjDealButton" disabled={busy||!canStart}
         onClick={()=>act("START_GAME")}>{poker?"Distribuer les cartes":"Ouvrir le duel"}<ChevronRight size={18}/></button>:
         <p className="bjWaiting">En attente de l’hôte</p>}

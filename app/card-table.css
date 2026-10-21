@@ -1,0 +1,109 @@
+.pokerExperience,.bjExperience,.tableWaiting{container:card-game / inline-size}
+.pokerHeading{padding:12px 4px 16px}
+.pokerHeading h1{font-size:23px;margin:0}
+.pokerHeading .eyebrow{display:none}
+.cardTableFrame{--seat-width:126px;position:relative;height:580px;isolation:isolate;min-width:0;margin:0}
+.cardTableFrame.crowded{--seat-width:112px}
+.cardTableFrame.pokerArena{padding:0;background:none;border:0;border-radius:0;box-shadow:none}
+.cardTableRail{position:absolute;inset:38px 32px;border:15px solid #292522;border-radius:50%;background:radial-gradient(ellipse at 50% 38%,#237459,#124d3b 72%,#0b3529);box-shadow:0 0 0 2px #73624b,inset 0 0 0 2px #a58d61,inset 0 0 65px #00170e99,0 20px 38px #0006;z-index:-1}
+.cardTableRail>div{position:absolute;inset:20px;border:1px solid #d1c0864a;border-radius:inherit}
+.cardTableCenter{position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);width:55%;max-width:460px;text-align:center}
+.cardTableSeats{position:absolute;inset:0;padding:0;display:block}
+.tablePosition{position:absolute;left:var(--seat-x);top:var(--seat-y);transform:translate(-50%,-50%);width:var(--seat-width)}
+.cardTableSeat{position:relative;display:flex;align-items:center;flex-direction:column;gap:5px;width:100%;min-width:0;height:132px;border:0;border-radius:0;background:none;padding:0;box-shadow:none;transition:opacity .15s}
+.cardTableSeat.pokerSeat{border:0;background:none;padding:0;box-shadow:none}
+.cardTableSeat.folded{opacity:.45}
+.tableSeatPlaque{width:100%;min-width:0;min-height:42px;border:1px solid #8a876458;border-radius:7px;padding:6px 8px;background:#101b17f2;box-shadow:0 3px 8px #0005;display:flex;justify-content:center;flex-direction:column;gap:4px}
+.cardTableSeat.mine .tableSeatPlaque{border-color:#e1c074}
+.cardTableSeat.active .tableSeatPlaque{border-color:#a6efd0;box-shadow:0 0 0 2px #a6efd033,0 3px 8px #0005}
+.tableSeatName{display:flex;justify-content:center;align-items:center;gap:4px;min-width:0;font-size:11px}
+.tableSeatName strong{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;min-width:0;font-weight:650}
+.tableSeatName abbr{width:17px;height:17px;flex-shrink:0;border-radius:50%;display:grid;place-items:center;background:#ebe1c9;color:#292822;font-size:7px;text-decoration:none;font-weight:800}
+.tableSeatBalance{font-size:11px;color:#e6cd92;text-align:center;font-variant-numeric:tabular-nums}
+.tableSeatBalance small{font-size:8px;color:#aebcb1}
+.tableSeatBalance>span{font-size:8px;color:#b2c7bb;margin-left:5px}
+.tableSeatHand{position:relative;display:flex;justify-content:center;align-items:center;min-height:64px;width:100%}
+.tableSeatCards{--card-width:44px;display:flex;justify-content:center;gap:3px;width:100%;padding:2px 0 5px}
+.tableSeatCards .playingCard.mini{width:var(--card-width);height:62px;flex-shrink:0;border-radius:5px;rotate:-5deg}
+.tableSeatCards .playingCard.mini:nth-child(even){rotate:5deg}
+.tableSeatCards:has(.playingCard:nth-child(3)){gap:0}
+.tableSeatCards:has(.playingCard:nth-child(3)) .playingCard{rotate:0deg}
+.tableSeatCards:has(.playingCard:nth-child(3)) .playingCard+.playingCard{margin-left:min(3px,calc((100% - var(--hand-size) * var(--card-width)) / (var(--hand-size) - 1)))}
+.tableSeatScore{position:absolute;right:-4px;bottom:2px;border:1px solid #99875e;background:#13251c;min-width:25px;height:25px;border-radius:50%;display:grid;place-items:center;font-size:12px;color:#f3dfaa;z-index:6}
+.tableSeatScore.bust{color:#ffb8b1;border-color:#b37a75}
+.tableSeatState{display:flex;gap:6px;justify-content:center;align-items:center;color:#c4d1c7;font-size:9px;line-height:1.2;max-width:100%;text-align:center;min-height:15px}
+.tableSeatBet{display:flex;align-items:center;gap:3px;font-weight:700;color:#efd49b}
+.tableSeatBet i{width:11px;height:11px;flex-shrink:0;background:#a6484f;border:2px dashed #e7d7cb;border-radius:50%;box-shadow:0 2px 0 #552c30}
+.cardTableSeat.active .tableSeatState{color:#b3f7d7}
+.tablePosition.bottom .tableSeatPlaque{order:2}
+.tablePosition.bottom .tableSeatState{order:1}
+.tablePosition.bottom .tableSeatHand{order:0}
+.cardTableSeat.vacant{justify-content:center;opacity:.4}
+.cardTableSeat.vacant .tableSeatPlaque{border-style:dashed;background:#0c241866;box-shadow:none;color:#c7d2c5}
+.cardTableFrame .pokerBoard{padding:0;min-height:0;gap:14px}
+.cardTableFrame .pokerCommunity{gap:7px}
+.cardTableFrame .pokerCommunity .playingCard,.cardTableFrame .pokerEmptyCard{width:64px;height:91px}
+.cardTableFrame .pokerPot strong{font:500 30px Georgia,serif;color:#f5dfab}
+.cardTableFrame .pokerPot>span{font-size:9px;color:#c1d2bc}
+.cardTableFrame .pokerStreets li{color:#85a998}.cardTableFrame .pokerStreets .current{color:#fae3ad}
+.cardTableFrame .pokerBoardMeta{font-size:10px;color:#bfd5c5;gap:12px}
+.cardTableFrame .pokerEmptyCard{border-color:#c2d5b84d;background:#0b342844;color:#85ad90}
+.cardTableFrame .bjHouse{display:flex;flex-direction:column;align-items:center;gap:0;padding:0;min-height:0;background:none;border:0}
+.cardTableFrame .bjDealerArt{width:160px;height:132px;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 8px 8px #0004)}
+.cardTableFrame .bjDealerHand{padding:0;width:100%;min-width:0}
+.cardTableFrame .bjDealerIdentity{justify-content:center;gap:10px;margin:7px 0 10px}
+.cardTableFrame .bjHouse h2{font:500 19px Georgia,serif;margin:5px 0 0;overflow-wrap:anywhere}
+.cardTableFrame .bjHouse .eyebrow{font-size:8px;color:#e0c78d}
+.cardTableFrame .bjDealerIdentity>strong{font-size:21px}
+.cardTableFrame .bjBankCards{justify-content:center;min-height:96px;margin:0 0 10px;flex-wrap:nowrap;gap:7px}
+.cardTableFrame .bjBankCards .playingCard{width:64px;height:91px;flex:0 0 64px}
+.cardTableFrame .bjBankCards:has(.playingCard:nth-child(5)) .playingCard+.playingCard{margin-left:-30px}
+.cardTableFrame .bjRuleTags{justify-content:center;font-size:9px;color:#b5c9b4;margin-top:10px}
+.cardTableFrame .waitingTableArt{border:0;background:none;padding:0}
+.cardTableFrame .waitingTableArt h2{font-size:27px;margin:12px 0 8px}
+.cardTableFrame .waitingTableArt p{font-size:11px;color:#b1c8b7}
+.pokerConsole,.bjPlayerConsole{background:#101714;border-color:#424e42;padding:12px;margin-top:16px;box-shadow:none}
+.pokerOwnHand{min-width:150px}.pokerOwnHand .playingCard{width:34px;height:48px}
+.pokerExperience .pokerCall,.bjExperience .bjPlayerActions .hit{background:#dbbd78;border-color:#dbbd78;color:#201e16}
+.pokerExperience .pokerAllIn{background:#523038;border-color:#7e4f56;color:#f0c4c7}
+.pokerMainActions{grid-template-columns:1fr 1.3fr .8fr}
+.pokerWaiting,.bjWaiting{font-size:12px}
+.bjPlayerConsole{margin-top:16px}.bjMyMetrics{gap:22px}.bjMyMetrics b{font-size:18px}
+.bjExperience .bjPlayerActions button{min-height:42px;padding:9px 16px}
+.bjDealerConsole{margin-top:12px;padding:12px 0}
+.bjLobbyConsole{padding:16px 0}
+.tableLobby{height:530px}
+.tableLobby .cardTableSeat{height:92px;justify-content:center}
+.tableLobby .bjHouse h2{margin-top:7px}
+@container card-game (max-width:900px){
+  .cardTableFrame{--seat-width:112px}.cardTableFrame.crowded{--seat-width:100px}
+  .tableSeatName{font-size:10px}.tableSeatCards{--card-width:40px}.tableSeatCards .playingCard.mini{height:57px}
+  .cardTableFrame .pokerCommunity .playingCard,.cardTableFrame .pokerEmptyCard{width:55px;height:79px}
+  .pokerRaise{grid-template-columns:auto 130px minmax(50px,1fr) auto}.raiseSizing button{padding:5px}
+}
+@container card-game (max-width:700px){
+  .cardTableFrame,.cardTableFrame.tableLobby{--seat-width:100%;height:auto;min-height:370px;padding:20px 16px 30px}
+  .cardTableRail{inset:5px 3px;border-width:9px;border-radius:130px / 90px}
+  .cardTableRail>div{inset:12px;border-radius:115px / 78px}
+  .cardTableCenter{position:relative;inset:auto;transform:none;width:100%;max-width:none;min-height:260px;display:flex;justify-content:center;align-items:center;padding:15px 0 25px}
+  .cardTableSeats,.cardTableSeats.bjHandsGrid{position:relative;inset:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 26px;padding:0 0 6px}
+  .tablePosition{position:relative;left:auto;top:auto;transform:none;width:100%;min-width:0}
+  .cardTableSeat{height:140px;max-width:150px;margin:auto}
+  .tableSeatPlaque{order:2!important;min-height:44px}.tableSeatHand{order:0!important}.tableSeatState{order:1!important}
+  .tableSeatName{font-size:11px}.tableSeatCards{--card-width:44px}.tableSeatCards .playingCard.mini{height:62px}
+  .tableSeatScore{right:2px}
+  .cardTableFrame .pokerCommunity .playingCard,.cardTableFrame .pokerEmptyCard{width:48px;height:69px}
+  .cardTableFrame .pokerCommunity{gap:5px}.cardTableFrame .pokerBoardMeta{font-size:9px;gap:7px}
+  .cardTableFrame .pokerPot strong{font-size:27px}
+  .cardTableFrame .bjDealerArt{height:120px;width:145px}
+  .cardTableFrame .bjBankCards .playingCard{width:54px;height:77px;flex-basis:54px}
+  .cardTableFrame .bjBankCards{min-height:80px}
+  .cardTableFrame .bjRuleTags{font-size:8px}
+  .pokerHeading{padding:10px 4px 16px;gap:8px}.pokerHeading h1{font-size:21px}
+  .pokerRaise{grid-template-columns:1fr 1fr auto}
+  .pokerConsole{gap:10px}.pokerOwnHand>div:last-child{flex-direction:column;align-items:flex-start;gap:4px}
+  .tableLobby .cardTableCenter{min-height:230px}.tableLobby .cardTableSeats{gap:14px 20px}
+  .tableLobby .cardTableSeat{height:86px}
+  .cardTableFrame .waitingTableArt h2{font-size:24px}
+}
+@media(max-width:1280px){.roomLayout:has(.cardTableFrame){grid-template-columns:1fr}.roomLayout:has(.cardTableFrame) .sideRail{position:static;height:auto;min-height:0;max-height:none}}

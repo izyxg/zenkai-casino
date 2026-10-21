@@ -2,6 +2,7 @@
 import Image from "next/image";
 import {useEffect,useState} from "react";
 import {Check, ChevronRight, Coins, Minus, Plus} from "lucide-react";
+import {CardTable,TablePlayer} from "./CardTable";
 
 const fmt=(n:number)=>n.toLocaleString("fr-FR");
 export default function BlackjackLobby({snap,me,busy,act}:{snap:any;me:any;busy:boolean;act:(action:string,payload?:any)=>Promise<void>}) {
@@ -18,25 +19,22 @@ export default function BlackjackLobby({snap,me,busy,act}:{snap:any;me:any;busy:
   return <section className="bjExperience">
     <header className="pokerHeading"><div><span className="eyebrow">LE CERCLE DU RYÔ</span><h1>Blackjack</h1></div>
       <div className="bjReady"><i/>{eligible.length} mise{eligible.length>1?"s":""} confirmée{eligible.length>1?"s":""}</div></header>
+    <CardTable className="blackjackArena tableLobby" label="Tapis de blackjack" seats={Array.from({length:Math.max(players.length,Math.min(5,snap.maxPlayers-(hostDealer?1:0)))},(_,i)=>{
+      const p=players[i],ready=p&&eligible.some((e:any)=>e.id===p.id);
+      return <TablePlayer key={p?.id??"empty"+i} name={p?.name} balance={p?.balance} isMe={p?.id===me.id}
+        bet={ready?p.currentBet:0} status={ready?"Mise confirmée":"En attente de mise"}/>;
+    })}>
     <div className="bjHouse">
       <Image src="/dealer-duo.webp" alt="Les croupiers du Cercle du Ryô" width={256} height={256} priority unoptimized className="bjDealerArt"/>
       <div><span className="eyebrow">LA BANQUE</span><h2>{hostDealer?snap.players.find((p:any)=>p.isHost)?.name:"La maison"}</h2>
         <div className="bjRuleTags"><span>Blackjack paie 3:2</span><span>Banque reste à 17</span><span>Double sur 2 cartes</span></div>
-        {me.isHost&&<div className="bjDealerSwitch" role="group" aria-label="Mode du croupier">
-          <button className={hostDealer?"selected":""} disabled={busy} onClick={()=>act("SET_DEALER_MODE",{mode:"HOST"})}>Hôte croupier</button>
-          <button className={!hostDealer?"selected":""} disabled={busy} onClick={()=>act("SET_DEALER_MODE",{mode:"AUTO"})}>Maison automatique</button>
-        </div>}
       </div>
     </div>
-    <div className="bjLobbySeats">{players.map((p:any)=>{
-      const ready=eligible.some((e:any)=>e.id===p.id);
-      return <article className={`bjLobbySeat ${p.id===me.id?"mine":""} ${ready?"ready":""}`} key={p.id}>
-        <div><strong>{p.name}</strong>{p.id===me.id&&<small>Vous</small>}</div>
-        <span>Solde <b>{fmt(p.balance)}</b></span>
-        <div className="bjStake"><Coins size={20}/><b>{ready?fmt(p.currentBet):"—"}</b><small>Ryôs</small></div>
-        <span className="bjSeatReady">{ready?<><Check size={12}/>Mise confirmée</>:"En attente de mise"}</span>
-      </article>;
-    })}</div>
+    </CardTable>
+    {me.isHost&&<div className="bjDealerSwitch" role="group" aria-label="Mode du croupier">
+      <button className={hostDealer?"selected":""} disabled={busy} onClick={()=>act("SET_DEALER_MODE",{mode:"HOST"})}>Hôte croupier</button>
+      <button className={!hostDealer?"selected":""} disabled={busy} onClick={()=>act("SET_DEALER_MODE",{mode:"AUTO"})}>Maison automatique</button>
+    </div>}
     <div className="bjLobbyConsole">
       {!isDealer?<form className="bjBetForm" onSubmit={e=>{e.preventDefault();if(valid) void act("SET_BET",{bet});}}>
         <label htmlFor="blackjack-wager">Votre mise <small>{max<snap.minBet?"Solde insuffisant":fmt(snap.minBet)+" – "+fmt(max)+" Ryôs"}</small></label>

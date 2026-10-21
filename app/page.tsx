@@ -13,7 +13,7 @@ const games=[{id:"BLACKJACK",name:"Blackjack",mark:"21",places:"2–13 places"},
 
 export default function Home() {
   const router=useRouter();
-  const [mode,setMode]=useState<"create"|"join">("create");
+  const [mode,setMode]=useState<"create"|"join">("join");
   const [gameType,setGameType]=useState<GameType>("BLACKJACK");
   const [capacity,setCapacity]=useState("6");
   const [busy,setBusy]=useState(false);

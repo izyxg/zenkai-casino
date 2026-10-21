@@ -3,7 +3,7 @@ import Image from "next/image";
 import {useEffect,useState} from "react";
 import {Check, ChevronRight, Hand, Plus, RotateCcw} from "lucide-react";
 import {CardView} from "./CardView";
-import {PlayerSeat} from "./PlayerSeat";
+import {CardTable,TablePlayer} from "./CardTable";
 import {DealerCardPicker} from "./DealerCardPicker";
 import {handTotal,blackjackLabels,blackjackOutcome} from "@/lib/blackjack-view";
 
@@ -34,6 +34,13 @@ export default function BlackjackTable({snap,me,busy,error,act,onNext}:{
     <header className="pokerHeading"><div><span className="eyebrow">LE CERCLE DU RYÔ</span><h1>Blackjack</h1></div>
       <div className={`pokerTurn ${turn?"yours":""}`} role="status"><i/>{finished?"Manche terminée":dealerTurn?"Tour du croupier":turn?"À vous de jouer":"Tour de "+(current?.name??"la table")}</div>
     </header>
+    <CardTable label="Tapis de blackjack" seatsClassName="bjHandsGrid" className="blackjackArena" seats={players.map((p:any)=>{
+      const hand=s.hands[p.id];
+      return <TablePlayer key={p.id} name={p.name} balance={p.balance} isMe={p.id===me.id}
+        active={!finished&&s.dealerPhase==="PLAYERS"&&currentId===p.id} cards={hand?.cards??[]}
+        bet={hand?.bet??0} score={hand?handTotal(hand.cards):undefined}
+        status={hand?blackjackLabels[hand.status]??hand.status:"Spectateur"}/>;
+    })}>
     <div className="bjHouse bjActiveHouse">
       <Image src="/dealer-duo.webp" alt="Les croupiers du Cercle du Ryô" width={256} height={256} priority unoptimized className="bjDealerArt"/>
       <div className="bjDealerHand"><div className="bjDealerIdentity"><div><span className="eyebrow">{s.dealerMode==="HOST"?"CROUPIER HÔTE":"LA MAISON"}</span>
@@ -42,6 +49,7 @@ export default function BlackjackTable({snap,me,busy,error,act,onNext}:{
         <div className="bjRuleTags"><span>Blackjack 3:2</span><span>La banque reste à 17</span></div>
       </div>
     </div>
+    </CardTable>
     {mine&&<div className={`bjPlayerConsole ${turn?"yourTurn":""}`}>
       <div className="bjMyMetrics"><div><span>Votre main</span><b className={myScore!==null&&myScore>21?"bust":""}>{myScore}</b></div>
         <div><span>Mise</span><b>{fmt(mine.bet)}<small>Ryôs</small></b></div>
@@ -59,13 +67,6 @@ export default function BlackjackTable({snap,me,busy,error,act,onNext}:{
         <><button disabled={busy||(dealerScore??0)>=17} onClick={()=>play("DRAW")}><Plus size={18}/>Tirer</button>
           <button className="bjDealButton" disabled={busy||(dealerScore??0)<17} onClick={()=>act("BLACKJACK_DEALER",{move:"SETTLE"})}><Check size={18}/>Régler la table</button></>}
     </div>}
-    <div className="bjHandsGrid">{players.map((p:any)=>{
-      const hand=s.hands[p.id];
-      return <PlayerSeat key={p.id} player={p} isMe={p.id===me.id}
-        active={!finished&&s.dealerPhase==="PLAYERS"&&currentId===p.id} table="blackjack"
-        cards={hand?.cards??[]} bet={hand?.bet??0} score={hand?handTotal(hand.cards):undefined}
-        status={hand?blackjackLabels[hand.status]??hand.status:"Spectateur"}/>;
-    })}</div>
     {!mine&&!isDealer&&!finished&&<p className="bjWaiting">Vous êtes spectateur pour cette manche.</p>}
     {isDealer&&dealerTurn&&choice&&s.dealerAvailableCards&&<DealerCardPicker
       key={game.id+choice+s.dealer.length} move={choice} cards={s.dealerAvailableCards} busy={busy} error={error}

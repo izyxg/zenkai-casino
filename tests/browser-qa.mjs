@@ -19,7 +19,7 @@ const root={id:"r",code:"TEST01",gameType:"POKER",status:"ACTIVE",minBet:10,maxB
   startingBalance:10000,blackjackDealerMode:"HOST",locked:false,players,events:[],game:poker};
 const snap=structuredClone(root);
 let getDelay=0,inFlight=0,maxInFlight=0;
-const page=await browser.newPage();
+const page=await browser.newPage({reducedMotion:"reduce"});
 page.on("pageerror",e=>errors.push(e.message));
 try {
   await page.addInitScript(()=>{if(!localStorage.getItem("zenkai-casino:TEST01"))localStorage.setItem("zenkai-casino:TEST01",JSON.stringify({playerId:"p0",sessionToken:"fixture-only"}));});
@@ -48,6 +48,8 @@ try {
   assert.equal(actions.at(-1).payload.move,"ALLIN");
   for(const size of [{width:1920,height:1080},{width:1366,height:768},{width:390,height:844}]) {
     await page.setViewportSize(size);
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await page.evaluate(()=>window.scrollTo(0,0));
     const issues=await page.evaluate(()=>{
       const out=[];
       if(document.documentElement.scrollWidth>innerWidth+1)out.push("horizontal page overflow");
@@ -80,19 +82,29 @@ try {
   assert.equal(actions.at(-1).payload.move,"HIT");
   for(const size of [{width:1920,height:1080},{width:1366,height:768},{width:390,height:844}]) {
     await page.setViewportSize(size);
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await page.evaluate(()=>window.scrollTo(0,0));
     const issues=await page.evaluate(()=>{
       const result=[];
       if(document.documentElement.scrollWidth>innerWidth+1)result.push("horizontal overflow");
-      for(const el of document.querySelectorAll(".bjHandsGrid .seatCards")){
-        const a=el.getBoundingClientRect(),b=el.closest(".playerSeat").getBoundingClientRect();
+      for(const el of document.querySelectorAll(".bjHandsGrid .tableSeatCards")){
+        const a=el.getBoundingClientRect(),b=el.closest(".cardTableSeat").getBoundingClientRect();
         if(a.bottom>b.bottom+1||a.right>b.right+1)result.push("cards outside seat");
       }
       for(const el of document.querySelectorAll(".bjPlayerActions button"))if(el.scrollWidth>el.clientWidth+2)result.push("action text overflow");
-      if(document.querySelector(".bjPlayerConsole").getBoundingClientRect().bottom>document.querySelector(".bjHandsGrid").getBoundingClientRect().top+1)result.push("controls obscure hands");
+      if(document.querySelector(".bjPlayerConsole").getBoundingClientRect().top<document.querySelector(".cardTableFrame").getBoundingClientRect().bottom-1)result.push("controls obscure table");
+      const seats=[...document.querySelectorAll(".bjHandsGrid .cardTableSeat")].map(e=>e.getBoundingClientRect());
+      for(let i=0;i<seats.length;i++)for(let j=i+1;j<seats.length;j++){
+        const a=seats[i],b=seats[j];
+        if(a.left<b.right-1&&a.right>b.left+1&&a.top<b.bottom-1&&a.bottom>b.top+1)result.push("overlapping seats");
+      }
       return result;
     });
-    assert.deepEqual(issues,[]);
-    assert.equal(await page.locator(".bjHandsGrid .playerSeat").count(),12);
+    if(issues.length){
+      await page.screenshot({path:path.join(out,"blackjack-layout-failure.png"),fullPage:true});
+    }
+    assert.deepEqual(issues,[],JSON.stringify(size));
+    assert.equal(await page.locator(".bjHandsGrid .cardTableSeat").count(),12);
     assert(await page.locator(".bjDealerArt").evaluate(e=>e.complete&&e.naturalWidth>0));
     await page.screenshot({path:path.join(out,`blackjack-${size.width}.png`),fullPage:true});
     report.push({game:"BLACKJACK",viewport:size,seats:12,issues});
@@ -140,6 +152,11 @@ try {
   assert(await page.getByRole("button",{name:"Tapis",exact:true}).isDisabled());
   report.push({scenario:"short all-in",raiseDisabled:true,allInDisabled:true});
   await page.goto(base,{timeout:180000});
+  assert(await page.getByLabel("Code du salon").isVisible());
+  assert.equal(await page.getByRole("button",{name:"Rejoindre",exact:true}).getAttribute("aria-pressed"),"true");
+  assert.equal(await page.getByLabel("Code créateur").count(),0);
+  report.push({scenario:"join by default",passed:true});
+  await page.getByRole("button",{name:"Créer une table",exact:true}).click();
   for(const size of [{width:1440,height:1000},{width:390,height:844}]) {
     await page.setViewportSize(size);
     await page.locator(".homeSubmit").waitFor();
