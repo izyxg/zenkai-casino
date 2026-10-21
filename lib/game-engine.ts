@@ -1,10 +1,10 @@
 import { prisma } from "./prisma";
-import { blackjackValue, type Card } from "./cards";
+import { bestPokerHand, blackjackValue, type Card } from "./cards";
 import { blackjackDealerChoices } from "./blackjack-rules";
 import type { AnyGameState, BlackjackState, CoinState, PokerState } from "./game-types";
 import { newCoinState, coinCommit } from "./games/coinflip";
 import { newBlackjackState, blackjackAction, blackjackDealerAction, settleBlackjack } from "./games/blackjack";
-import { newPokerState, pokerAction } from "./games/poker";
+import { newPokerState, pokerAction, beginPokerHand } from "./games/poker";
 export { logEvent } from "./games/shared";
 export { coinCommit, blackjackAction, blackjackDealerAction, pokerAction };
 
@@ -23,6 +23,11 @@ export function publicGameState(state:AnyGameState,viewerId:string,dealerCardCho
   }
   if(state.kind==="POKER"){
     const s=structuredClone(state) as PokerState;
+    s.deck=[];
+    delete s.handLabel;
+    if(s.board.length>=3&&s.hole[viewerId]?.length===2) {
+      s.handLabel=bestPokerHand([...s.hole[viewerId],...s.board]).label;
+    }
     for(const id of Object.keys(s.hole)){
       if(id!==viewerId&&s.stage!=="SHOWDOWN") s.hole[id]=["??" as Card,"??" as Card];
     }
@@ -45,7 +50,7 @@ export async function setBet(playerId:string,bet:number){
 }
 
 export async function startGame(roomId:string,hostId:string){
-  const room=await prisma.room.findUniqueOrThrow({where:{id:roomId},include:{players:true}});
+  const room=await prisma.room.findUniqueOrThrow({where:{id:roomId},include:{players:{orderBy:{joinedAt:"asc"}}}});
   if(room.status==="CLOSED") throw new Error("Room fermée");
 
   const host=room.players.find(p=>p.id===hostId);
@@ -53,12 +58,16 @@ export async function startGame(roomId:string,hostId:string){
   if(await prisma.game.findFirst({where:{roomId,status:"ACTIVE"}})) throw new Error("Une partie est déjà en cours");
   if(room.gameType==="COINFLIP"&&room.players.length!==2) throw new Error("Pile ou Face nécessite exactement 2 joueurs");
 
+  const previousPoker=room.gameType==="POKER"
+    ?await prisma.game.findFirst({where:{roomId,type:"POKER"},orderBy:{startedAt:"desc"}}):null;
+  const previousState=previousPoker?.state as PokerState|undefined;
+  const previousDealerId=previousState?.seats?.[previousState.dealerIndex]?.playerId;
   const state:AnyGameState=
     room.gameType==="COINFLIP"
       ?newCoinState()
       :room.gameType==="BLACKJACK"
         ?await newBlackjackState(room)
-        :await newPokerState(room);
+        :await newPokerState({...room,previousDealerId});
 
   const game=await prisma.game.create({
     data:{roomId,type:room.gameType,status:"ACTIVE",state:state as any}
@@ -68,6 +77,7 @@ export async function startGame(roomId:string,hostId:string){
 
   const {logEvent}=await import("./games/shared");
   await logEvent(roomId,"GAME_START",`Une partie de ${room.gameType} commence.`,game.id);
+  if(state.kind==="POKER") await beginPokerHand(game,state);
 
   if(
     state.kind==="BLACKJACK" &&

@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 
 const key=(code:string)=>`zenkai-casino:${code}`;
 const games=[
-  {id:"BLACKJACK",icon:"21",title:"Blackjack",tag:"2–9 joueurs",copy:"Affronte la maison ou laisse l'hôte prendre la place du croupier.",accent:"gold"},
-  {id:"POKER",icon:"♠",title:"Texas Hold'em",tag:"2–8 joueurs",copy:"Blinds, relances, all-in et showdown autour d'une vraie table.",accent:"red"},
+  {id:"BLACKJACK",icon:"21",title:"Blackjack",tag:"2–13 joueurs",copy:"Affronte la maison ou laisse l'hôte prendre la place du croupier.",accent:"gold"},
+  {id:"POKER",icon:"♠",title:"Texas Hold'em",tag:"2–13 joueurs",copy:"Blinds, relances, all-in et showdown autour d'une vraie table.",accent:"red"},
   {id:"COINFLIP",icon:"◐",title:"Pile ou Face",tag:"2 joueurs",copy:"Un duel rapide. Une mise. Deux camps. Une pièce au milieu.",accent:"ivory"}
 ] as const;
 
@@ -82,7 +82,7 @@ export default function Home(){
         </div>
         <div className="heroStats">
           <div><b>3</b><span>jeux</span></div>
-          <div><b>9</b><span>joueurs max</span></div>
+          <div><b>13</b><span>joueurs max</span></div>
           <div><b>100%</b><span>privé</span></div>
         </div>
       </div>
@@ -187,12 +187,12 @@ export default function Home(){
               type="number"
               name="maxPlayers"
               min="2"
-              max={gameType==="BLACKJACK"?9:8}
+              max={13}
               defaultValue={gameType==="COINFLIP"?2:6}
               disabled={gameType==="COINFLIP"}
             />
             {gameType==="COINFLIP"&&<input type="hidden" name="maxPlayers" value="2"/>}
-            {gameType==="BLACKJACK"&&<small className="fieldHint">Blackjack accepte jusqu'à 9 sièges.</small>}
+            {gameType!=="COINFLIP"&&<small className="fieldHint">De 2 à 13 sièges, modifiable entre les manches.</small>}
           </div>
           <div className="field">
             <label>Solde de départ</label>

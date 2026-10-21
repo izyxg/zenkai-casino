@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticatePlayer, roomSnapshot } from "@/lib/room";
 import { prisma } from "@/lib/prisma";
+import { validateCapacity } from "@/lib/table-limits";
 import {
   blackjackAction,
   blackjackDealerAction,
@@ -97,6 +98,16 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
           payload:{playerId:target.id,previousBalance:target.balance,newBalance:balance,delta,
             ...(increasedLimit?{previousMaxBet:currentRoom.maxBet,newMaxBet:balance}:{})}
         }});
+      });
+    }else if(action==="SET_CAPACITY"){
+      if(!player.isHost) throw new Error("Hôte uniquement");
+      if(room.status==="CLOSED"||active) throw new Error("La capacité se règle entre les manches");
+      await prisma.$transaction(async tx=>{
+        const current=await tx.room.findUniqueOrThrow({where:{id:room.id},include:{_count:{select:{players:true}}}});
+        if(current.status!=="LOBBY") throw new Error("La capacité se règle entre les manches");
+        const maxPlayers=validateCapacity(current.gameType,payload.maxPlayers,current._count.players);
+        await tx.room.update({where:{id:room.id},data:{maxPlayers}});
+        await tx.gameEvent.create({data:{roomId:room.id,type:"ROOM",message:`Capacité du salon : ${maxPlayers} sièges.`}});
       });
     }else if(action==="RESET_BALANCES"){
       if(!player.isHost) throw new Error("Hôte uniquement");

@@ -181,6 +181,7 @@ describe("public blackjack state",()=>{
   });
   it("does not expose choices or private permission to a random-room host",()=>{
     const view=publicGameState(state(),"host");
+    if(view.kind!=="BLACKJACK") throw new Error("Blackjack snapshot expected");
     expect(view).not.toHaveProperty("dealerAvailableCards");
     expect(view).not.toHaveProperty("dealerCardChoiceEnabled");
     expect(view.deck).toEqual([]);

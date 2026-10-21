@@ -3,6 +3,7 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import GamePanel from "@/components/GamePanel";
+import CapacitySettings from "@/components/CapacitySettings";
 
 const storageKey=(code:string)=>`zenkai-casino:${code}`;
 const gameNames:Record<string,string>={
@@ -172,6 +173,8 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
               <div><b>Fermer le salon</b><small>Mettre fin à cette table</small></div>
             </button>
           </div>
+          <CapacitySettings gameType={snap.gameType} capacity={snap.maxPlayers} occupied={snap.players.length}
+            disabled={busy||isActive||snap.status==="CLOSED"} onSave={maxPlayers=>{void act("SET_CAPACITY",{maxPlayers});}}/>
         </section>}
       </section>
 

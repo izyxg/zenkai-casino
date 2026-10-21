@@ -2,17 +2,24 @@ import { prisma } from "../prisma";
 import { bestPokerHand, compareScore, freshDeck, shuffle, type Card } from "../cards";
 import type { PokerState } from "../game-types";
 import { changeBalance, logEvent } from "./shared";
+import { MAX_TABLE_PLAYERS } from "../table-limits";
 
 export async function newPokerState(room:any):Promise<PokerState>{
-  const eligible=room.players.filter((p:any)=>p.balance>=room.minBet).slice(0,8);
+  const eligible=room.players.filter((p:any)=>p.balance>=room.minBet);
+  if(eligible.length>MAX_TABLE_PLAYERS) throw new Error("La table de poker est limitée à 13 joueurs");
   if(eligible.length<2) throw new Error("Le poker nécessite au moins 2 joueurs avec assez de Ryôs");
   const deck=shuffle(freshDeck()), hole:Record<string,Card[]>={}; eligible.forEach((p:any)=>hole[p.id]=[deck.pop()!,deck.pop()!]);
   const sb=Math.max(room.minBet,1),bb=Math.min(room.maxBet,Math.max(sb*2,sb));
   const seats=eligible.map((p:any)=>({playerId:p.id,folded:false,allIn:false,roundBet:0,totalBet:0}));
-  const dealerIndex=0,sbIdx=eligible.length===2?0:1,bbIdx=eligible.length===2?1:2;
+  const previous=eligible.findIndex((p:any)=>p.id===room.previousDealerId);
+  const dealerIndex=previous<0?0:(previous+1)%eligible.length;
+  const sbIdx=eligible.length===2?dealerIndex:(dealerIndex+1)%eligible.length;
+  const bbIdx=(sbIdx+1)%eligible.length;
   const blind=async(i:number,a:number)=>{const p=eligible[i],real=Math.min(a,p.balance);await changeBalance(room.id,p.id,-real,"BET","Blind Poker");seats[i].roundBet=real;seats[i].totalBet=real;if(real===p.balance)seats[i].allIn=true;return real;};
   const sbPaid=await blind(sbIdx,sb),bbPaid=await blind(bbIdx,bb);
-  return {kind:"POKER",deck,board:[],hole,seats,dealerIndex,currentIndex:(bbIdx+1)%eligible.length,stage:"PREFLOP",currentBet:Math.max(sbPaid,bbPaid),minRaise:Math.max(1,bb),pot:sbPaid+bbPaid,acted:[]};
+  const state:PokerState={kind:"POKER",deck,board:[],hole,seats,dealerIndex,currentIndex:bbIdx,stage:"PREFLOP",currentBet:Math.max(sbPaid,bbPaid),bigBlind:bb,minRaise:Math.max(1,bb),pot:sbPaid+bbPaid,acted:[]};
+  state.currentIndex=next(state,bbIdx);
+  return state;
 }
 
 const active=(s:PokerState)=>s.seats.filter(x=>!x.folded);
@@ -28,22 +35,31 @@ async function showdown(game:any,s:PokerState){
 
 async function advance(game:any,s:PokerState){
   if(active(s).length===1){const w=active(s)[0];await changeBalance(game.roomId,w.playerId,s.pot,"WIN","Victoire Poker - dernier joueur en jeu");s.winners=[{playerId:w.playerId,amount:s.pot,label:"Dernier joueur en jeu"}];s.stage="SHOWDOWN";await prisma.game.update({where:{id:game.id},data:{state:s as any,status:"FINISHED",endedAt:new Date()}});await prisma.room.update({where:{id:game.roomId},data:{status:"LOBBY"}});await logEvent(game.roomId,"POKER_RESULT",`Le dernier joueur en jeu remporte ${s.pot} Ryôs.`,game.id,s.winners);return;}
-  if(!roundDone(s)){s.currentIndex=next(s,s.currentIndex);await prisma.game.update({where:{id:game.id},data:{state:s as any}});return;}
-  s.seats.forEach(x=>x.roundBet=0);s.currentBet=0;s.acted=[];
+  const able=active(s).filter(x=>!x.allIn);
+  const noMoreBets=able.length<=1&&(!able[0]||able[0].roundBet>=s.currentBet);
+  if(!roundDone(s)&&!noMoreBets){s.currentIndex=next(s,s.currentIndex);await prisma.game.update({where:{id:game.id},data:{state:s as any}});return;}
+  s.seats.forEach(x=>x.roundBet=0);s.currentBet=0;s.acted=[];s.minRaise=s.bigBlind??s.minRaise;
   if(s.stage==="PREFLOP"){s.board.push(s.deck.pop()!,s.deck.pop()!,s.deck.pop()!);s.stage="FLOP";}else if(s.stage==="FLOP"){s.board.push(s.deck.pop()!);s.stage="TURN";}else if(s.stage==="TURN"){s.board.push(s.deck.pop()!);s.stage="RIVER";}else return showdown(game,s);
   s.currentIndex=next(s,s.dealerIndex);if(active(s).filter(x=>!x.allIn).length<=1)return advance(game,s);await prisma.game.update({where:{id:game.id},data:{state:s as any}});
+}
+
+export async function beginPokerHand(game:any,s:PokerState){
+  const able=active(s).filter(x=>!x.allIn);
+  if(able.length<=1&&(!able[0]||able[0].roundBet>=s.currentBet)) await advance(game,s);
 }
 
 export async function pokerAction(gameId:string,playerId:string,action:"FOLD"|"CHECK"|"CALL"|"RAISE"|"ALLIN",amount?:number){
   const game=await prisma.game.findUniqueOrThrow({where:{id:gameId}});
   const s=game.state as unknown as PokerState;
-  if(s.kind!=="POKER"||s.stage==="SHOWDOWN") throw new Error("La main est déjà terminée");
+  if(game.status!=="ACTIVE"||s.kind!=="POKER"||s.stage==="SHOWDOWN") throw new Error("La main est déjà terminée");
+  if(!["FOLD","CHECK","CALL","RAISE","ALLIN"].includes(action)) throw new Error("Action de poker invalide");
 
   const seat=s.seats[s.currentIndex];
-  if(seat.playerId!==playerId) throw new Error("Attends ton tour");
+  if(!seat||seat.playerId!==playerId||seat.folded||seat.allIn) throw new Error("Attends ton tour");
 
   const player=await prisma.player.findUniqueOrThrow({where:{id:playerId}});
   const toCall=Math.max(0,s.currentBet-seat.roundBet);
+  const raiseReopened=!s.acted.includes(playerId);
   let eventMessage="";
 
   const pay=async(v:number)=>{
@@ -63,19 +79,23 @@ export async function pokerAction(gameId:string,playerId:string,action:"FOLD"|"C
     if(toCall!==0) throw new Error("Tu dois suivre la mise ou te coucher");
     eventMessage=`${player.name} fait parole.`;
   }else if(action==="CALL"){
-    await pay(toCall);
-    eventMessage=`${player.name} suit ${toCall} Ryôs.`;
+    const paid=await pay(toCall);
+    eventMessage=`${player.name} suit ${paid} Ryôs.`;
   }else if(action==="ALLIN"){
+    if(player.balance<=0) throw new Error("Solde insuffisant");
+    if(!raiseReopened&&player.balance>toCall) throw new Error("La relance n'est pas rouverte");
     const before=seat.roundBet;
     const paid=await pay(player.balance);
     if(seat.roundBet>s.currentBet){
-      s.minRaise=Math.max(s.minRaise,seat.roundBet-s.currentBet);
+      const increase=seat.roundBet-s.currentBet;
+      if(increase>=s.minRaise){s.minRaise=increase;s.acted=[];}
       s.currentBet=seat.roundBet;
-      s.acted=[];
     }
     eventMessage=`${player.name} fait tapis à ${before+paid} Ryôs.`;
   }else if(action==="RAISE"){
     const target=amount??0;
+    if(!raiseReopened) throw new Error("La relance n'est pas rouverte");
+    if(!Number.isSafeInteger(target)||target<1) throw new Error("Relance entière invalide");
     const minTarget=s.currentBet+s.minRaise;
     if(target<minTarget) throw new Error(`Relance minimale : ${minTarget} Ryôs`);
     const need=target-seat.roundBet;

@@ -21,6 +21,14 @@ function create(accessCode:string,extra:Record<string,unknown>={}){
 }
 
 describe("server-only table access codes",()=>{
+  it.each(["BLACKJACK","POKER"])("creates a 13-seat %s table without silently trimming it",async gameType=>{
+    expect((await create("test-random-secret",{gameType,maxPlayers:13})).status).toBe(200);
+    expect(mocks.create.mock.calls[0][0].data.maxPlayers).toBe(13);
+  });
+  it.each([14,1,2.5])("rejects an invalid capacity %s",async maxPlayers=>{
+    expect((await create("test-random-secret",{maxPlayers})).status).toBe(400);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
   it.each([["test-manual-secret",true],["test-random-secret",false]])("stores permission for %s only on the server",async(code,enabled)=>{
     const response=await create(code as string);
     expect(response.status).toBe(200);

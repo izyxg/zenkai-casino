@@ -5,6 +5,7 @@ import { CardView } from "./CardView";
 import { PlayerSeat } from "./PlayerSeat";
 import { ChipStack, CHIP_DENOMS } from "./ChipStack";
 import { DealerCardPicker } from "./DealerCardPicker";
+import PokerTable from "./PokerTable";
 
 const fmt=(n:number)=>Number(n||0).toLocaleString("fr-FR");
 
@@ -36,17 +37,6 @@ function statusLabel(status?:string){
   } as Record<string,string>)[status??""]??status??"";
 }
 
-const ringPositions=[
-  {left:"50%",top:"88%"},
-  {left:"18%",top:"77%"},
-  {left:"82%",top:"77%"},
-  {left:"8%",top:"46%"},
-  {left:"92%",top:"46%"},
-  {left:"19%",top:"17%"},
-  {left:"81%",top:"17%"},
-  {left:"50%",top:"8%"}
-];
-
 function RoundResult({text,onClose}:{text:string;onClose:()=>void}){
   return <div className="roundResultBar">
     <div><span>MANCHE TERMINÉE</span><b>{text}</b></div>
@@ -69,7 +59,6 @@ export default function GamePanel({
 }){
   const game=snap.game;
   const [bet,setBet]=useState(me.currentBet||snap.minBet);
-  const [raise,setRaise]=useState(snap.minBet*2);
   const [dismissedResult,setDismissedResult]=useState<string|null>(null);
   const [clock,setClock]=useState(Date.now());
   const [dealerChoice,setDealerChoice]=useState<{gameId:string;move:"REVEAL"|"DRAW";count:number}|null>(null);
@@ -90,15 +79,6 @@ export default function GamePanel({
     // Refresh the choice after the host updates our wallet (and clears any old wager).
     setBet(me.currentBet>0?me.currentBet:Math.min(snap.minBet,me.balance));
   },[me.currentBet,me.balance,snap.minBet]);
-
-  useEffect(()=>{
-    const state=game?.state;
-    if(state?.kind!=="POKER") return;
-    const mine=state.seats?.find((x:any)=>x.playerId===me.id);
-    const min=Math.max(state.currentBet+state.minRaise,(mine?.roundBet??0)+1);
-    const max=(mine?.roundBet??0)+me.balance;
-    setRaise((value)=>Math.max(min,Math.min(value,max)));
-  },[game?.id,game?.state?.currentBet,game?.state?.minRaise,game?.state?.currentIndex,me.id,me.balance]);
 
   const lastEvt=snap.events?.[snap.events.length-1];
   const lastEvent=lastEvt?.message;
@@ -740,104 +720,9 @@ export default function GamePanel({
   }
 
   if(s.kind==="POKER"){
-    const hole=s.hole?.[me.id]??[];
-    const currentSeat=s.seats[s.currentIndex];
-    const turn=currentSeat?.playerId===me.id&&s.stage!=="SHOWDOWN"&&game.status==="ACTIVE";
-    const mine=s.seats.find((x:any)=>x.playerId===me.id);
-    const call=Math.max(0,s.currentBet-(mine?.roundBet??0));
-    const minRaiseTarget=Math.max(s.currentBet+s.minRaise,(mine?.roundBet??0)+1);
-    const maxRaiseTarget=(mine?.roundBet??0)+me.balance;
-    const canRaise=maxRaiseTarget>=minRaiseTarget;
-    const seats=s.seats.map((seat:any)=>({
-      ...seat,
-      player:snap.players.find((p:any)=>p.id===seat.playerId)
-    }));
-    const stageLabel=statusLabel(s.stage);
-
-    return <section className="gameStage pokerStage">
-      <div className="stageAmbient"/>
-      <div className="felt pokerFelt">
-        <div className="feltBorder"/>
-        <div className="pokerCenter">
-          <span className="roundEyebrow">{stageLabel}</span>
-          <div className="communityCards">
-            {[0,1,2,3,4].map(i=>s.board[i]
-              ?<CardView key={s.board[i]+"-"+i} card={s.board[i]} source="board" delay={i*120}/>
-              :<div className="cardSlot" key={i}><span>{i<3?"F":i===3?"T":"R"}</span></div>
-            )}
-          </div>
-          <div key={s.pot} className="potDisplay"><span>POT</span><b>{fmt(s.pot)}</b><small>Ryôs</small></div>
-        </div>
-
-        <div className="pokerSeatRing">
-          {seats.map((seat:any,i:number)=>{
-            const pos=ringPositions[i]??ringPositions[0];
-            return <div
-              className="ringSeat"
-              key={seat.playerId}
-              style={{left:pos.left,top:pos.top}}
-            >
-              <PlayerSeat
-                player={seat.player}
-                isMe={seat.playerId===me.id}
-                active={s.seats[s.currentIndex]?.playerId===seat.playerId&&s.stage!=="SHOWDOWN"&&game.status==="ACTIVE"}
-                cards={s.hole?.[seat.playerId]??[]}
-                status={seat.folded?"Couché":seat.allIn?"Tapis":seat.roundBet?fmt(seat.roundBet)+" misés":"En jeu"}
-                bet={seat.roundBet}
-                compact
-              />
-              {i===s.dealerIndex&&<span className="dealerButton">D</span>}
-            </div>;
-          })}
-        </div>
-
-        <div className="pokerMonogram">C</div>
-      </div>
-
-      {s.winners?.length>0&&<div className="winnerBanner">
-        <span>GAGNANT</span>
-        <b>{s.winners.map((w:any)=>(snap.players.find((p:any)=>p.id===w.playerId)?.name??"Joueur")+": +"+fmt(w.amount)).join(" • ")}</b>
-      </div>}
-
-      {turn&&<div className="actionDock pokerActions">
-        <div className="holePreview">
-          <span>Ta main</span>
-          <div>{hole.map((card:string,i:number)=><CardView key={card+"-"+i} card={card} mini delay={i*90}/>)}</div>
-        </div>
-        <button disabled={busy} className="casinoBtn dangerSoft" onClick={()=>act("POKER",{move:"FOLD"})}>SE COUCHER</button>
-        {call===0
-          ?<button disabled={busy} className="casinoBtn primary" onClick={()=>act("POKER",{move:"CHECK"})}>PAROLE</button>
-          :<button disabled={busy} className="casinoBtn primary" onClick={()=>act("POKER",{move:"CALL"})}>SUIVRE {fmt(call)}</button>}
-        <div className="raiseControl">
-          <span>Total de relance</span>
-          <input
-            type="number"
-            min={minRaiseTarget}
-            max={maxRaiseTarget}
-            value={raise}
-            disabled={!canRaise}
-            onChange={e=>setRaise(Number(e.target.value))}
-          />
-        </div>
-        <button
-          disabled={busy||!canRaise||raise<minRaiseTarget||raise>maxRaiseTarget}
-          className="casinoBtn ghost"
-          onClick={()=>act("POKER",{move:"RAISE",amount:raise})}
-        >
-          RELANCER
-        </button>
-        <button disabled={busy||me.balance<=0} className="casinoBtn red" onClick={()=>act("POKER",{move:"ALLIN"})}>TAPIS</button>
-      </div>}
-
-      {game.status==="ACTIVE"&&!turn&&<div className="spectatorHint">
-        {currentSeat?"Au tour de "+(snap.players.find((p:any)=>p.id===currentSeat.playerId)?.name??"un joueur")+"…":"La table avance…"}
-      </div>}
-
-      {showFinished&&<RoundResult
-        text={lastEvent??"La main est terminée."}
-        onClose={()=>setDismissedResult(game.id)}
-      />}
-    </section>;
+    return <PokerTable key={game.id} state={s} players={snap.players} me={me} gameId={game.id}
+      finished={game.status==="FINISHED"} busy={busy} onAction={act}
+      result={lastEvent} onNext={()=>setDismissedResult(game.id)}/>;
   }
 
   return null;

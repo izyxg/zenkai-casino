@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { hashToken, newSessionToken, randomRoomCode } from "@/lib/auth";
 import { logEvent } from "@/lib/game-engine";
 import { timingSafeEqual } from "crypto";
+import { MAX_TABLE_PLAYERS } from "@/lib/table-limits";
 
 const schema=z.object({
   accessCode:z.string().min(1).max(128),
@@ -11,12 +12,11 @@ const schema=z.object({
   gameType:z.enum(["COINFLIP","BLACKJACK","POKER"]),
   minBet:z.coerce.number().int().min(1),
   maxBet:z.coerce.number().int().min(1),
-  maxPlayers:z.coerce.number().int().min(2).max(9),
+  maxPlayers:z.coerce.number().int().min(2).max(MAX_TABLE_PLAYERS),
   startingBalance:z.coerce.number().int().min(100),
   blackjackDealerMode:z.enum(["AUTO","HOST"]).optional().default("AUTO")
 })
-  .refine(x=>x.maxBet>=x.minBet,{message:"La mise max doit être supérieure à la mise min"})
-  .refine(x=>x.gameType==="BLACKJACK"||x.maxPlayers<=8,{message:"Ce jeu est limité à 8 joueurs maximum"});
+  .refine(x=>x.maxBet>=x.minBet,{message:"La mise max doit être supérieure à la mise min"});
 
 export async function POST(req:Request){
   try{
@@ -47,7 +47,7 @@ export async function POST(req:Request){
       blackjackDealerMode
     }=raw;
 
-    const roomMaxPlayers=gameType==="COINFLIP"?2:gameType==="BLACKJACK"?Math.min(maxPlayers,9):Math.min(maxPlayers,8);
+    const roomMaxPlayers=gameType==="COINFLIP"?2:maxPlayers;
 
     let code="";
     for(let i=0;i<10;i++){

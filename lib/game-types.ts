@@ -43,6 +43,8 @@ export type PokerState = {
   stage:"PREFLOP"|"FLOP"|"TURN"|"RIVER"|"SHOWDOWN";
   currentBet:number;
   minRaise:number;
+  bigBlind?:number;
+  handLabel?:string;
   pot:number;
   acted:string[];
   winners?:Array<{playerId:string;amount:number;label:string}>;

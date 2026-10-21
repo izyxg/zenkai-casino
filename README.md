@@ -10,7 +10,7 @@ Maison de jeu **100 % RP** pour Zenkai, sous le nom **Le Cercle du Ryô**. Les R
 - Pile ou Face serveur-authoritaire
 - Blackjack multijoueur contre le croupier
 - En mode croupier hôte, tirage aléatoire ou menu de sélection selon l'autorisation privée de la table
-- Texas Hold'em 2 à 8 joueurs avec blinds, check/call/raise/fold/all-in, showdown et side pots
+- Texas Hold'em 2 à 13 joueurs avec blinds tournantes, check/call/raise/fold/all-in, showdown et side pots
 - Journal RP copiable
 - Contrôles hôte : verrouillage, reset des soldes, fermeture
 - Reconnexion par token local
