@@ -25,7 +25,8 @@ export async function newBlackjackState(room:any):Promise<BlackjackState>{
       :"Au moins un joueur doit confirmer une mise valide avant de distribuer");
   }
 
-  const deck=shuffle(freshDeck());
+  // A six-deck shoe leaves enough cards for thirteen complete player hands.
+  const deck=shuffle(Array.from({length:6},()=>freshDeck()).flat());
   const hands:BlackjackState["hands"]={};
 
   // Bets are taken before cards are dealt. Losing hands receive no refund later.

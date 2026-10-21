@@ -1,0 +1,65 @@
+:root{--bg:#0b100e;--bg-soft:#101713;--panel:#131c17;--panel-2:#18251d;--panel-3:#223027;--muted:#a4b1a6;--text:#edf1e9;--line:#bdd2bd24;--line-strong:#bdd2bd42;--radius:8px}
+body{background:#0b100e;color:var(--text)}
+.casinoHome *,.roomPage *{letter-spacing:0}
+button,input,select,a{touch-action:manipulation}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #91d8b4;outline-offset:3px}
+button:disabled{cursor:not-allowed}
+.casinoHome{max-width:1160px;margin:0 auto;padding:0 32px}
+.homeNav{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:90px;border-bottom:1px solid var(--line)}
+.homePrivacy{display:flex;align-items:center;gap:7px;color:#aabcac;font-size:11px}
+.homeTitle{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:38px 0 28px}
+.homeTitle h1{font:500 38px Georgia,serif;margin:9px 0;color:#f1e7cf}
+.homeTitle p{font-size:13px;line-height:1.6;color:#aabaac;margin:0}
+.homeCurrency{display:flex;align-items:center;gap:12px;color:#d6b77a;font-size:15px}
+.homeCurrency>span{display:flex;flex-direction:column;gap:5px}.homeCurrency small{font-size:10px;color:#a2afa4}
+.homeModes{display:flex;gap:4px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.homeModes button{display:flex;align-items:center;gap:9px;padding:11px 20px;background:transparent;color:#aab8ac;border:1px solid transparent;border-radius:5px;font-size:13px;cursor:pointer}
+.homeModes button.active{background:#21352a;color:#ecf5ec;border-color:#526752}
+.homeWorkspace{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:48px;padding:30px 0 42px}
+.homeFormArea{min-width:0}.homeGames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.homeGames button{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;padding:15px;border:1px solid #3a4b3d;border-radius:7px;background:#121f17;color:#ecede2;text-align:left;cursor:pointer}
+.homeGames button.selected{border-color:#e0c07a;background:#273324}.homeGames button>span{display:grid;place-items:center;width:28px;height:28px;color:#e3c787;font:700 24px Georgia,serif}
+.homeGames b{font-size:12px;overflow-wrap:anywhere}.homeGames small{font-size:10px;color:#a9b9ab}
+.homeFormHeading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:26px 0 18px}
+.homeFormHeading h2{font:500 25px Georgia,serif;margin:0}.homeFormHeading span{color:#a4b7a8;font-size:11px}
+.homeForm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 16px}
+.homeForm .field{min-width:0}.homeForm .field.full{grid-column:1/-1}
+.homeForm .field label{font-size:12px;color:#c0cec0;display:block;margin-bottom:7px}
+.homeForm input:not([type=radio]){width:100%;min-width:0;height:44px;border:1px solid #3f5343;border-radius:5px;background:#0c1510;color:#ecf2e8;padding:10px 12px;font-size:14px}
+.homeForm .moneyInput{border:0;background:none;border-radius:0;position:relative;display:block}
+.homeForm .moneyInput input{padding-right:48px}.homeForm .moneyInput span{position:absolute;right:12px;top:15px;color:#a2b2a5;font-size:10px}
+.homeDealerChoice{grid-column:1/-1;padding:0;border:0;margin:0;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.homeDealerChoice legend{font-size:12px;color:#bccbbb;margin-bottom:12px}.homeDealerChoice label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}.homeDealerChoice input{accent-color:#d7b977}
+.homeForm .homeSubmit{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:14px;background:#dfbf7c;color:#17251a;min-height:48px;border:1px solid #dfbf7c;border-radius:5px;font-weight:750;font-size:14px;padding:12px 18px;cursor:pointer;margin-top:5px}
+.homeSubmit:hover:not(:disabled){background:#eed29b}.homeError{background:#4a272b;border-left:3px solid #dc8e8d;color:#ffd6d3;font-size:12px;padding:13px;margin:0 0 14px}
+.homeHouse{border-left:1px solid var(--line);padding:18px 0 0 32px;display:flex;flex-direction:column;align-items:center;min-width:0}
+.homeHouseTitle{align-self:flex-start}.homeHouseTitle>b{display:block;font:500 29px Georgia,serif;margin-top:9px}
+.homeDealerArt{width:100%;height:auto;aspect-ratio:1;object-fit:contain;margin-top:14px}
+.homeHouseCards{display:flex;justify-content:center;gap:10px;margin:-15px 0 25px;position:relative}
+.homeHouseCards .playingCard:first-child{transform:rotate(-9deg)}.homeHouseCards .playingCard:last-child{transform:rotate(9deg)}
+.homeHouseDetails{border-top:1px solid var(--line);padding-top:18px;width:100%;display:flex;flex-direction:column;gap:15px;color:#a6b9aa;font-size:11px}.homeHouseDetails span{display:flex;align-items:center;gap:8px}
+.homeFooter{border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:14px;padding:23px 0 30px;color:#819986;font-size:10px}
+.roomBackdrop{background:none;filter:none}.roomHeader{background:#0e1712;border-bottom:1px solid var(--line);box-shadow:none}
+.roomBrand>div>span{font-size:10px;color:#c9b47e}.roomBrand>div>b{font-size:20px}.roomState{font-size:10px}.roomCode{border-radius:6px;background:#18231b}.roomCode b{font-size:17px}.roomCode small,.roomCode>span{font-size:9px}
+.myWallet>b{font-size:24px}.myWallet>span,.myWallet>small{font-size:10px;color:#aebeaf}
+.roomLayout{grid-template-columns:minmax(0,1fr) 300px;max-width:1680px;gap:22px;padding-top:20px}
+.tableMeta{font-size:11px}.tableMeta>span{font-size:11px;color:#a4b7a8}.iconTextBtn{font-size:11px}
+.sideRail{background:#0f1912;border-radius:6px;border-color:#3b4f3e;box-shadow:none}
+.railTabs button{font-size:12px;padding:14px 10px}.railTabs button.active{background:#24372a;color:#eee9d7}
+.railSectionTitle{font-size:10px}.railSectionTitle small{font-size:11px}
+.railPlayer{border:1px solid #344a38;background:#132017;border-radius:5px;padding:10px 8px}
+.railAvatar{background:#263b2c;color:#dac899;border:0;border-radius:50%;width:32px;height:32px}
+.railPlayerInfo b{font-size:11px}.railPlayerInfo>span{font-size:9px;color:#9daf9e}.railBalance{font-size:12px}.railBalance small{font-size:8px}.railPlayerInfo{min-width:0}
+.playerList{gap:7px}.roomLimits{font-size:11px}.roomLimits span{color:#a7b6a8}.roomLimits b{font-size:12px}
+.hostDeck{background:none;border:0;border-radius:0;box-shadow:none;padding:22px 0}
+.hostDeckTitle b{font-size:19px}.hostDeckTitle small{font-size:10px;color:#8fa695}
+.hostAction{border:1px solid #344a3a;border-radius:6px;background:#122016}.hostAction b{font-size:12px}.hostAction small{font-size:10px;color:#98b09c}
+.hostAction>span{display:flex;align-items:center;justify-content:center}
+.globalToast{font-size:12px;max-width:calc(100% - 24px);overflow-wrap:anywhere}.busyPill{font-size:11px}
+.balanceEditBtn,.kickBtn{border-radius:4px}
+.eventFeed p{font-size:12px;line-height:1.6}.eventFeed time{font-size:10px}
+.roomPage .casinoBtn{border-radius:5px}.railFooter{font-size:11px}
+@media(max-width:1100px){.roomLayout{grid-template-columns:1fr}.sideRail{height:auto;max-height:none;min-height:0;position:static}.playerList{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.railBalance{display:block}.homeWorkspace{gap:26px;grid-template-columns:minmax(0,1fr) 280px}}
+@media(max-width:760px){.casinoHome{padding:0 20px}.homeNav{min-height:76px}.homePrivacy{font-size:10px}.homeTitle{padding-top:28px}.homeTitle h1{font-size:31px}.homeCurrency{display:none}.homeWorkspace{grid-template-columns:1fr;gap:26px;padding-top:22px}.homeHouse{display:none}.homeGames button{padding:12px}.homeForm{gap:16px 12px}.homeFooter{flex-wrap:wrap}.roomBrand>div>b{font-size:16px}.playerList{grid-template-columns:repeat(2,minmax(0,1fr))}.roomLayout{padding:8px;gap:18px}.roomHeader{gap:10px}.tableMeta>span{font-size:10px}.hostDeckTitle{align-items:flex-start}.hostDeckTitle small{max-width:45%}.hostActions{gap:6px}.hostAction small{display:none}.hostAction b{font-size:11px}.hostAction{padding:11px 8px}.railPlayerInfo b{font-size:10px}.railPlayerInfo>span{font-size:9px}.railPlayerTools{gap:3px}.railBalance{display:none}}
+@media(max-width:420px){.homeModes button{padding:10px 14px}.homeGames b{font-size:11px}.homeGames small{font-size:9px}.homeTitle h1{font-size:29px}.homePrivacy{max-width:120px}.homeNav .logoMark{width:34px;height:34px}.homeFormHeading span{font-size:10px}.playerList{grid-template-columns:1fr}.railBalance{display:block}.myWallet>b{font-size:20px}.roomIdentity{gap:8px}.roomCode{min-width:0!important}.roomCode b{font-size:15px}.roomCode small{display:none}.roomBrand .logoMark{width:34px;height:34px;flex-shrink:0}.roomBrand{gap:8px}.roomBrand>div>b{font-size:14px}.roomBrand>div>span{font-size:8px}}
+@media(max-width:1100px){.roomHeader{height:auto;min-height:72px;grid-template-columns:1fr auto;padding:12px}.roomIdentity{position:static;transform:none;grid-column:1/-1;order:3;justify-content:space-between;background:none;border:0;box-shadow:none;padding:10px 0 0;width:100%;border-radius:0}.roomState{display:flex}.roomCode{height:36px;min-width:150px}.roomBrand>div>span{display:block}}

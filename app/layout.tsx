@@ -1,5 +1,7 @@
 import "./globals.css";
 import "./tables.css";
+import "./blackjack.css";
+import "./experience.css";
 import type { Metadata } from "next";
 
 export const metadata:Metadata={

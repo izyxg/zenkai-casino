@@ -1,249 +1,92 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
+import {useState} from "react";
+import {useRouter} from "next/navigation";
+import {ArrowRight, Coins, DoorOpen, Plus, ShieldCheck, Spade, Users} from "lucide-react";
+import {CardView} from "@/components/CardView";
 
-const key=(code:string)=>`zenkai-casino:${code}`;
-const games=[
-  {id:"BLACKJACK",icon:"21",title:"Blackjack",tag:"2–13 joueurs",copy:"Affronte la maison ou laisse l'hôte prendre la place du croupier.",accent:"gold"},
-  {id:"POKER",icon:"♠",title:"Texas Hold'em",tag:"2–13 joueurs",copy:"Blinds, relances, all-in et showdown autour d'une vraie table.",accent:"red"},
-  {id:"COINFLIP",icon:"◐",title:"Pile ou Face",tag:"2 joueurs",copy:"Un duel rapide. Une mise. Deux camps. Une pièce au milieu.",accent:"ivory"}
-] as const;
+type GameType="BLACKJACK"|"POKER"|"COINFLIP";
+const games=[{id:"BLACKJACK",name:"Blackjack",mark:"21",places:"2–13 places"},
+  {id:"POKER",name:"Texas Hold’em",mark:"♠",places:"2–13 places"},
+  {id:"COINFLIP",name:"Pile ou Face",mark:"◐",places:"2 places"}] as const;
 
-export default function Home(){
+export default function Home() {
   const router=useRouter();
+  const [mode,setMode]=useState<"create"|"join">("create");
+  const [gameType,setGameType]=useState<GameType>("BLACKJACK");
+  const [capacity,setCapacity]=useState("6");
+  const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
-  const [creating,setCreating]=useState(false);
-  const [mode,setMode]=useState<"create" | "join">("create");
-  const [gameType,setGameType]=useState<"BLACKJACK" | "POKER" | "COINFLIP">("BLACKJACK");
-
-  const selected=useMemo(()=>games.find(g=>g.id===gameType)!,[gameType]);
-
-  function openEntry(next:"create"|"join"){
-    setMode(next);
-    requestAnimationFrame(()=>{
-      document.getElementById("entry")?.scrollIntoView({behavior:"smooth",block:"start"});
-    });
-  }
-
-  async function create(e:React.FormEvent<HTMLFormElement>){
+  const selected=games.find(g=>g.id===gameType)!;
+  async function submit(e:React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setCreating(true);
-    setError("");
-    const f=new FormData(e.currentTarget);
-    const body={...Object.fromEntries(f.entries()),gameType};
+    if(busy)return;
+    setBusy(true);setError("");
+    const fields=Object.fromEntries(new FormData(e.currentTarget));
     try{
-      const r=await fetch("/api/rooms",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
-      const d=await r.json();
-      if(!r.ok) throw new Error(d.error);
-      localStorage.setItem(key(d.code),JSON.stringify({playerId:d.playerId,sessionToken:d.sessionToken}));
-      router.push(`/room/${d.code}`);
-    }catch(e:any){
-      setError(e.message);
-    }finally{
-      setCreating(false);
-    }
+      const response=await fetch(mode==="create"?"/api/rooms":"/api/rooms/join",{
+        method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify(mode==="create"?{...fields,gameType,maxPlayers:gameType==="COINFLIP"?2:capacity}:fields)
+      });
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.error||"La connexion a échoué");
+      localStorage.setItem("zenkai-casino:"+data.code,JSON.stringify({playerId:data.playerId,sessionToken:data.sessionToken}));
+      router.push("/room/"+data.code);
+    }catch(e:unknown){setError(e instanceof Error?e.message:"La connexion a échoué");setBusy(false);}
   }
+  function changeMode(value:"create"|"join"){setMode(value);setError("");}
 
-  async function join(e:React.FormEvent<HTMLFormElement>){
-    e.preventDefault();
-    setError("");
-    const f=new FormData(e.currentTarget);
-    const body=Object.fromEntries(f.entries());
-    try{
-      const r=await fetch("/api/rooms/join",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
-      const d=await r.json();
-      if(!r.ok) throw new Error(d.error);
-      localStorage.setItem(key(d.code),JSON.stringify({playerId:d.playerId,sessionToken:d.sessionToken}));
-      router.push(`/room/${d.code}`);
-    }catch(e:any){
-      setError(e.message);
-    }
-  }
-
-  return <main className="landing">
-    <div className="landingNoise"/>
-    <nav className="landingNav">
-      <a className="logoLockup" href="#">
-        <span className="logoMark">C</span>
-      <span><b>LE CERCLE</b><small>DU RYÔ</small></span>
-      </a>
-      <div className="navStatus"><i/> Maison de jeu privée • Ryôs</div>
-    </nav>
-
-    <section className="landingHero">
-      <div className="heroCopy">
-        <div className="eyebrow">LE CERCLE DU RYÔ • MAISON DE JEU PRIVÉE</div>
-        <h1>Le désert<br/><em>ne rembourse personne.</em></h1>
-        <p>Tables privées, jeux de cartes et duels autour du Ryô. Entre, prends place et laisse la table décider du reste.</p>
-        <div className="heroActions">
-          <button className="casinoBtn primary large" onClick={()=>openEntry("create")}>CRÉER UNE TABLE</button>
-          <button className="casinoBtn ghost large" onClick={()=>openEntry("join")}>REJOINDRE PAR CODE</button>
-        </div>
-        <div className="heroStats">
-          <div><b>3</b><span>jeux</span></div>
-          <div><b>13</b><span>joueurs max</span></div>
-          <div><b>100%</b><span>privé</span></div>
-        </div>
-      </div>
-
-      <div className="heroVisual" aria-hidden="true">
-        <div className="heroHalo"/>
-        <div className="previewTable">
-          <div className="previewEdge"/>
-          <div className="previewLogo">C</div>
-          <div className="previewDealer"><span>♣</span><small>CROUPIER</small></div>
-          <div className="previewCards">
-            <div className="fakeCard"><b>A</b><span>♠</span></div>
-            <div className="fakeCard red"><b>K</b><span>♥</span></div>
-            <div className="fakeCard back"/>
-          </div>
-          <div className="previewPot"><small>POT</small><b>25 000</b><span>Ryôs</span></div>
-          <div className="previewSeat s1"><i>SN</i><span>Shuuto</span></div>
-          <div className="previewSeat s2"><i>HZ</i><span>Hizuna</span></div>
-          <div className="previewSeat s3"><i>IK</i><span>Izana</span></div>
-        </div>
-        <div className="floatingChip c1">500</div>
-        <div className="floatingChip c2">1K</div>
-        <div className="floatingChip c3">5K</div>
-      </div>
-    </section>
-
-    <section className="gameShowcase" id="games">
-      <div className="sectionHead">
-        <div><span className="eyebrow">LES TABLES</span><h2>Choisis ton terrain de jeu</h2></div>
-        <p>Chaque table suit les règles de la maison : cartes, mises et résultats sont réglés directement par Le Cercle.</p>
-      </div>
-      <div className="gameCards">
-        {games.map(g=><button
-          key={g.id}
-          className={`gameCard ${g.accent} ${gameType===g.id?"selected":""}`}
-          onClick={()=>{setGameType(g.id);openEntry("create");}}
-        >
-          <span className="gameIcon">{g.icon}</span>
-          <span className="gameTag">{g.tag}</span>
-          <strong>{g.title}</strong>
-          <p>{g.copy}</p>
-          <span className="gameArrow">JOUER <b>↗</b></span>
-        </button>)}
-      </div>
-    </section>
-
-    <section className="entrySection" id="entry">
-      <div className="entryIntro">
-        <span className="eyebrow">{mode==="create"?"OUVRIR UNE TABLE":"ENTRER DANS UN SALON"}</span>
-        <h2>{mode==="create"?selected.title:"Tu as déjà un code ?"}</h2>
-        <p>{mode==="create"
-          ?"Configure la table, partage le code et laisse les autres joueurs te rejoindre."
-          :"Entre ton nom et le code reçu. Rien d'autre n'est nécessaire."}</p>
-        <div className="modeSwitch">
-          <button className={mode==="create"?"active":""} onClick={()=>setMode("create")}>Créer</button>
-          <button className={mode==="join"?"active":""} onClick={()=>setMode("join")}>Rejoindre</button>
-        </div>
-      </div>
-
-      <div className="entryPanel">
-        {error&&<div className="errorToast"><span>!</span>{error}</div>}
-
-        {mode==="create"?<form className="casinoForm" onSubmit={create}>
-          <div className="field full">
-            <label>Code d'accès créateur</label>
-            <input
-              type="password"
-              name="accessCode"
-              placeholder="Code privé"
-              autoComplete="off"
-              required
-              maxLength={128}
-            />
-            <small className="fieldHint">Ce code est réservé aux personnes autorisées à ouvrir une table.</small>
-          </div>
-
-          <div className="field full">
-            <label>Nom</label>
-            <input name="name" placeholder="Shuuto Nakae" required maxLength={24}/>
-          </div>
-
-          <div className="field full">
-            <label>Jeu sélectionné</label>
-            <div className="selectedGameField">
-              <span className="gameIcon small">{selected.icon}</span>
-              <div><b>{selected.title}</b><small>{selected.tag}</small></div>
-              <button type="button" onClick={()=>document.getElementById("games")?.scrollIntoView()}>Changer</button>
-            </div>
-          </div>
-
-          <div className="field">
-            <label>Mise minimum</label>
-            <div className="moneyInput"><input type="number" name="minBet" min="1" defaultValue="100"/><span>Ryôs</span></div>
-          </div>
-          <div className="field">
-            <label>Mise maximum</label>
-            <div className="moneyInput"><input type="number" name="maxBet" min="1" defaultValue="10000"/><span>Ryôs</span></div>
-          </div>
-          <div className="field">
-            <label>Joueurs maximum</label>
-            <input
-              type="number"
-              name="maxPlayers"
-              min="2"
-              max={13}
-              defaultValue={gameType==="COINFLIP"?2:6}
-              disabled={gameType==="COINFLIP"}
-            />
-            {gameType==="COINFLIP"&&<input type="hidden" name="maxPlayers" value="2"/>}
-            {gameType!=="COINFLIP"&&<small className="fieldHint">De 2 à 13 sièges, modifiable entre les manches.</small>}
-          </div>
-          <div className="field">
-            <label>Solde de départ</label>
-            <div className="moneyInput"><input type="number" name="startingBalance" min="100" defaultValue="10000"/><span>Ryôs</span></div>
-          </div>
-
-          {gameType==="BLACKJACK"&&<div className="field full">
-            <label>Croupier Blackjack</label>
-            <div className="dealerCreateChoice">
-              <label>
-                <input type="radio" name="blackjackDealerMode" value="HOST" defaultChecked/>
-                <span><b>Moi, l'hôte</b><small>Tu tiens la banque, révèles les cartes et tires pour le croupier.</small></span>
-              </label>
-              <label>
-                <input type="radio" name="blackjackDealerMode" value="AUTO"/>
-                <span><b>Maison automatique</b><small>Le serveur joue la main du croupier automatiquement.</small></span>
-              </label>
-            </div>
-          </div>}
-
-          <button className="casinoBtn primary submitBtn" disabled={creating}>
-            <span>{creating?"VÉRIFICATION…":"OUVRIR LA TABLE"}</span>
-            <small>Code du maître de table requis • puis un code de salon sera généré</small>
-          </button>
-        </form>:<form className="casinoForm joinForm" onSubmit={join}>
-          <div className="field full">
-            <label>Nom</label>
-            <input name="name" placeholder="Ton personnage" required maxLength={24}/>
-          </div>
-          <div className="field full">
-            <label>Code du salon</label>
-            <input className="codeInput" name="code" maxLength={8} placeholder="A7K9QX" required/>
-          </div>
-          <button className="casinoBtn primary submitBtn">
-            <span>ENTRER DANS LE SALON</span>
-            <small>Connexion immédiate</small>
-          </button>
-        </form>}
-      </div>
-    </section>
-
-    <section className="trustStrip">
-      <div><span>◆</span><b>Salons privés</b><small>Accès par code court</small></div>
-      <div><span>♜</span><b>Croupier hôte</b><small>Disponible au Blackjack</small></div>
-      <div><span>◎</span><b>Registre de table</b><small>Chaque action est consignée</small></div>
-      <div><span>∞</span><b>Maison du Ryô</b><small>Chaque table joue en Ryôs</small></div>
-    </section>
-
-    <footer className="landingFooter">
-      <div className="logoLockup"><span className="logoMark">C</span><span><b>LE CERCLE</b><small>DU RYÔ</small></span></div>
-      <p>Le Cercle du Ryô • Maison de jeu privée</p>
-    </footer>
+  return <main className="casinoHome">
+    <header className="homeNav"><a className="logoLockup" href="/" aria-label="Le Cercle du Ryô, accueil">
+      <span className="logoMark">C</span><span><b>LE CERCLE</b><small>DU RYÔ</small></span></a>
+      <span className="homePrivacy"><ShieldCheck size={15}/>Maison de jeu privée</span>
+    </header>
+    <div className="homeTitle"><div><span className="eyebrow">MAISON DE JEU</span><h1>Le Cercle du Ryô</h1>
+      <p>Votre table. Vos joueurs. La partie commence ici.</p></div><div className="homeCurrency"><Coins size={20}/><span>Ryôs<small>Monnaie de jeu</small></span></div></div>
+    <div className="homeModes" role="group" aria-label="Accès au salon">
+      <button className={mode==="create"?"active":""} onClick={()=>changeMode("create")} aria-pressed={mode==="create"}><Plus size={17}/>Créer une table</button>
+      <button className={mode==="join"?"active":""} onClick={()=>changeMode("join")} aria-pressed={mode==="join"}><DoorOpen size={17}/>Rejoindre</button>
+    </div>
+    <div className="homeWorkspace">
+      <section className="homeFormArea" aria-label={mode==="create"?"Création de table":"Rejoindre un salon"}>
+        {mode==="create"&&<div className="homeGames" role="group" aria-label="Choix du jeu">
+          {games.map(g=><button key={g.id} aria-pressed={g.id===gameType} className={g.id===gameType?"selected":""} disabled={busy}
+            onClick={()=>{setGameType(g.id);setError("");}}><span>{g.id==="POKER"?<Spade size={23}/>:g.mark}</span>
+            <b>{g.name}</b><small>{g.places}</small></button>)}</div>}
+        <div className="homeFormHeading"><h2>{mode==="create"?selected.name:"Rejoindre le salon"}</h2>
+          <span>{mode==="create"?"Nouvelle table privée":"Accès par code"}</span></div>
+        {error&&<p className="homeError" role="alert">{error}</p>}
+        <form className="homeForm" onSubmit={submit}>
+          <div className="field full"><label htmlFor="entry-name">Nom du joueur</label>
+            <input id="entry-name" name="name" placeholder="Votre personnage" minLength={2} maxLength={24} autoComplete="nickname" required disabled={busy}/></div>
+          {mode==="create"?<>
+            <div className="field full"><label htmlFor="creator-code">Code créateur</label>
+              <input id="creator-code" name="accessCode" type="password" placeholder="Code privé" maxLength={128} autoComplete="off" required disabled={busy}/></div>
+            <div className="field"><label htmlFor="min-bet">Mise minimum</label><div className="moneyInput">
+              <input id="min-bet" name="minBet" type="number" min={1} max={1000000000} step={1} defaultValue={100} required disabled={busy}/><span>Ryôs</span></div></div>
+            <div className="field"><label htmlFor="max-bet">Mise maximum</label><div className="moneyInput">
+              <input id="max-bet" name="maxBet" type="number" min={1} max={1000000000} step={1} defaultValue={10000} required disabled={busy}/><span>Ryôs</span></div></div>
+            <div className="field"><label htmlFor="max-players">Nombre de places</label>
+              <input id="max-players" type="number" min={2} max={13} step={1} value={gameType==="COINFLIP"?"2":capacity}
+                onChange={e=>setCapacity(e.target.value)} required disabled={busy||gameType==="COINFLIP"}/></div>
+            <div className="field"><label htmlFor="starting-balance">Solde de départ</label><div className="moneyInput">
+              <input id="starting-balance" name="startingBalance" type="number" min={100} max={1000000000} step={1} defaultValue={10000} required disabled={busy}/><span>Ryôs</span></div></div>
+            {gameType==="BLACKJACK"&&<fieldset className="homeDealerChoice"><legend>Croupier</legend>
+              <label><input type="radio" name="blackjackDealerMode" value="HOST" defaultChecked disabled={busy}/>Hôte</label>
+              <label><input type="radio" name="blackjackDealerMode" value="AUTO" disabled={busy}/>Maison automatique</label></fieldset>}
+          </>:<div className="field full"><label htmlFor="join-code">Code du salon</label>
+            <input id="join-code" name="code" placeholder="A7K9QX" minLength={4} maxLength={8} autoCapitalize="characters" autoComplete="off" required disabled={busy}/></div>}
+          <button className="homeSubmit" disabled={busy}>{busy?"Connexion…":mode==="create"?"Ouvrir la table":"Prendre place"}<ArrowRight size={18}/></button>
+        </form>
+      </section>
+      <aside className="homeHouse">
+        <div className="homeHouseTitle"><span className="eyebrow">LE CERCLE VOUS ATTEND</span><b>La maison</b></div>
+        <Image className="homeDealerArt" src="/dealer-duo.webp" alt="Les croupiers du Cercle du Ryô" width={380} height={380} priority unoptimized/>
+        <div className="homeHouseCards"><CardView card="AS" variant="premium"/><CardView card="KH" variant="premium"/></div>
+        <div className="homeHouseDetails"><span><Users size={15}/>Jusqu’à 13 places</span><span><ShieldCheck size={15}/>Salons sur invitation</span></div>
+      </aside>
+    </div>
+    <footer className="homeFooter"><span>Le Cercle du Ryô</span><span>Blackjack · Texas Hold’em · Pile ou Face</span></footer>
   </main>;
 }

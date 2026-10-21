@@ -1,0 +1,61 @@
+.bjExperience{min-width:0;position:relative}.bjExperience *{letter-spacing:0}
+.bjHouse{display:grid;grid-template-columns:200px minmax(0,1fr);gap:28px;align-items:center;min-height:225px;padding:12px 30px;border-top:1px solid #555b4a;border-bottom:1px solid #555b4a;background:#14291f}
+.bjDealerArt{width:100%;height:225px;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 12px 12px #0003)}
+.bjHouse h2{font:500 27px Georgia,serif;margin:8px 0 15px;overflow-wrap:anywhere}
+.bjRuleTags{display:flex;flex-wrap:wrap;gap:6px 12px;color:#b7c7bc;font-size:11px;line-height:1.6}
+.bjRuleTags span+span{border-left:1px solid #73857177;padding-left:12px}
+.bjDealerSwitch{display:flex;gap:4px;margin-top:16px;width:fit-content;padding:3px;background:#08150e;border:1px solid #3c5544;border-radius:6px}
+.bjExperience button,.tableWaiting button{min-height:39px;padding:9px 14px;border:1px solid #465b4c;border-radius:5px;background:#21382b;color:#e8f1ea;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-size:12px;font-weight:650}
+.bjExperience button:hover:not(:disabled),.tableWaiting button:hover:not(:disabled){filter:brightness(1.18)}
+.bjExperience button:disabled,.tableWaiting button:disabled{opacity:.4;cursor:not-allowed}
+.bjExperience .bjDealerSwitch button{background:transparent;border:0;color:#97aa9a;min-height:32px}
+.bjExperience .bjDealerSwitch .selected{background:#2f4d3b;color:#eff8f0}
+.bjExperience .bjDealButton,.tableWaiting .bjDealButton{background:#dcba72;border-color:#dcba72;color:#1d2118}
+.bjReady{display:flex;align-items:center;gap:8px;color:#a9dcb9;font-size:12px}
+.bjReady i{width:6px;height:6px;background:#77d1a2;border-radius:50%;flex-shrink:0}
+.bjLobbySeats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;padding:22px 0}
+.bjLobbySeat{background:#111b16;border:1px solid #344a3d;border-radius:6px;padding:14px;min-width:0}
+.bjLobbySeat.mine{border-color:#d5af69}.bjLobbySeat.ready{border-top:2px solid #73bc98}
+.bjLobbySeat>div:first-child{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bjLobbySeat strong{font-size:12px;overflow-wrap:anywhere}.bjLobbySeat small{font-size:9px;color:#b9c9be}
+.bjLobbySeat>span{display:block;font-size:10px;color:#a4b5aa;margin-top:8px}.bjLobbySeat>span b{color:#e2e6dd}
+.bjStake{display:flex;align-items:baseline;gap:7px;padding:18px 0 10px;color:#e6c381}.bjStake svg{align-self:center}.bjStake>b{font-size:22px;overflow-wrap:anywhere;min-width:0}
+.bjLobbySeat .bjSeatReady{display:flex;align-items:center;gap:5px;color:#9bb0a0;font-size:10px}.bjLobbySeat.ready .bjSeatReady{color:#94dcb0}
+.bjLobbyConsole{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:18px 0;border-top:1px solid #3c5142}
+.bjBetForm{max-width:480px;flex:1;min-width:0}.bjBetForm>label{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:650;margin-bottom:8px}.bjBetForm label small{font-size:10px;font-weight:400;color:#b0bdaf}
+.bjBetControls{display:flex;gap:5px;min-width:0}.bjBetControls>input{width:100%;min-width:0;padding:9px 8px;color:#f0f4eb;border-radius:5px;background:#0b1410;border:1px solid #495b4c;font-variant-numeric:tabular-nums;text-align:center;font-size:16px}
+.bjBetControls>button{flex-shrink:0}.bjExperience .bjConfirmBet{background:#8ddbb2;color:#12251b;border-color:#8ddbb2}
+.bjBetPresets{display:flex;gap:5px;margin-top:6px}.bjExperience .bjBetPresets button{flex:1;min-height:28px;font-size:10px;padding:5px;background:#15261c}
+.bjBankReady{display:flex;align-items:center;gap:14px;color:#e0ca95}.bjBankReady>div{display:flex;flex-direction:column;gap:6px;font-size:13px}.bjBankReady span{font-size:11px;color:#b1bcae}
+.bjWaiting{font-size:12px;color:#b2bdb3;line-height:1.6;margin:0;overflow-wrap:anywhere}
+.bjDealerHand{min-width:0;padding:18px 0}.bjDealerIdentity{display:flex;gap:20px;align-items:center;justify-content:space-between}
+.bjDealerIdentity h2{margin-bottom:12px}.bjDealerIdentity>strong{font-size:27px;font-variant-numeric:tabular-nums;color:#ecdfbd;text-align:center;flex-shrink:0}.bjDealerIdentity>strong small{display:block;font-size:9px;color:#9ab09f;font-weight:400}
+.bjBankCards{display:flex;flex-wrap:wrap;gap:7px;min-height:100px;margin:8px 0 15px}
+.bjBankCards .playingCard{width:62px;height:88px}.bjBankCards .cardSuit{font-size:29px}
+.bjHandsGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;padding:22px 0}
+.bjHandsGrid .playerSeat{width:100%;min-width:0;padding:12px;grid-template-columns:32px minmax(0,1fr) 42px;gap:8px;border-radius:6px;background:#121e17;border:1px solid #3b5243;box-shadow:none;align-content:start;transform:none}
+.bjHandsGrid .playerSeat.isMe{border-color:#dab36c}.bjHandsGrid .playerSeat.isActive{border-color:#8cddac;box-shadow:0 0 0 1px #8cddac}
+.bjHandsGrid .seatAvatar{width:32px;height:32px;border-radius:50%;font-size:10px;background:#304336;border-color:#5b7460;color:#c6d5c8}
+.bjHandsGrid .seatNameRow{flex-wrap:wrap;gap:3px}.bjHandsGrid .seatNameRow strong{font-size:12px;max-width:none;white-space:normal;overflow-wrap:anywhere}
+.bjHandsGrid .miniTag{font-size:6px;line-height:1.3}
+.bjHandsGrid .blackjackSeatStats{display:flex;gap:12px;margin-top:8px}
+.bjHandsGrid .blackjackSeatStats>span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.bjHandsGrid .blackjackSeatStats small{font-size:7px;color:#a3b3a8}.bjHandsGrid .blackjackSeatStats b{font-size:11px;overflow-wrap:anywhere}.bjHandsGrid .blackjackSeatStats i{display:none}
+.bjHandsGrid .seatStatus{font-size:9px;color:#b9c8bb;margin-top:6px}
+.bjHandsGrid .seatScore{position:static;display:flex;flex-direction:column;align-items:center;padding:5px 0;border:0;background:none;width:auto;height:auto;border-radius:0}
+.bjHandsGrid .seatScore small{font-size:8px;color:#a3b3a8}.bjHandsGrid .seatScore b{font-size:24px;color:#efd59a}
+.bjHandsGrid .activeBetVisual,.bjHandsGrid .seatGlow{display:none}
+.bjHandsGrid .seatCards{position:static;grid-column:1/-1;transform:none;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:8px;min-height:64px}
+.bjHandsGrid .seatCards .playingCard{width:44px;height:62px;border-radius:4px}.bjHandsGrid .seatCards .cardSuit{font-size:23px}.bjHandsGrid .seatCards .cardCorner b{font-size:11px}.bjHandsGrid .seatCards .cardCorner span{font-size:8px}
+.bjHandsGrid .turnPill{position:static;grid-column:1/-1;background:none;color:#92d5a9;font-size:9px;padding:0;margin-top:4px}
+.bjPlayerConsole{position:sticky;bottom:12px;z-index:21;display:flex;align-items:center;justify-content:space-between;gap:20px;background:#0e1812f5;border:1px solid #3b5341;border-radius:7px;padding:18px;backdrop-filter:blur(16px)}
+.bjPlayerConsole.yourTurn{border-color:#8cddac}.bjMyMetrics{display:flex;gap:24px;min-width:0}
+.bjMyMetrics>div{display:flex;flex-direction:column;gap:5px;min-width:0}.bjMyMetrics span{font-size:10px;color:#a6b7a9}.bjMyMetrics b{font-size:19px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.bjMyMetrics small{font-size:9px;margin-left:4px;font-weight:400;color:#a4b5a6}
+.bjPlayerActions{display:flex;gap:7px}.bjExperience .bjPlayerActions button{min-height:48px;padding:10px 18px}.bjExperience .bjPlayerActions .hit{background:#93ddae;color:#17251b;border-color:#93ddae}.bjExperience .bjPlayerActions .stand{background:#e9dcc4;color:#302818;border-color:#e9dcc4}
+.bjDealerConsole{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid #3e5544;padding:20px 0}
+.bjDealerConsole>div:first-child{display:flex;flex-direction:column;gap:8px;margin-right:auto}.bjDealerConsole b{font-size:14px}.bjExperience .bust{color:#ec9994}.bjHandsGrid .seatScore.bust b{color:#ec9994}
+.tableWaiting{min-width:0}.waitingTableArt{background:#132b22;padding:50px 16px;text-align:center;border-block:1px solid #405a47;color:#dfc58b}.waitingTableArt h2{font:500 29px Georgia,serif;margin:16px 0 8px}.waitingTableArt p{color:#a8bfad;font-size:12px}.waitingTableArt .bjRuleTags{justify-content:center;margin-top:18px}
+.waitingPlayerGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px;padding:20px 0}.waitingPlayerGrid>div{border-left:2px solid #49644e;padding:12px;background:#101c14;display:flex;flex-direction:column;gap:7px;min-width:0}.waitingPlayerGrid>div.mine{border-color:#d4b06c}.waitingPlayerGrid strong{font-size:12px;overflow-wrap:anywhere}.waitingPlayerGrid span{color:#d5bc83;font-size:12px}.waitingPlayerGrid small{font-size:10px;color:#a1b3a4}
+.waitingTableFooter{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:16px 0}.waitingTableFooter>span{font-size:12px;color:#afbdaf}
+@media(max-width:1250px){.bjPlayerConsole{flex-direction:column;align-items:stretch;gap:16px}.bjMyMetrics{justify-content:space-between}.bjPlayerActions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.bjHouse{grid-template-columns:90px minmax(0,1fr);gap:12px;padding:10px;min-height:190px}.bjDealerArt{height:175px}.bjHouse h2{font-size:21px}.bjRuleTags{font-size:9px;gap:4px 8px}.bjRuleTags span+span{padding-left:8px}.bjExperience .bjDealerSwitch button{font-size:10px;padding:6px}.bjDealerSwitch{flex-direction:column}.bjReady{font-size:10px;max-width:125px;line-height:1.4}.bjLobbySeats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:16px 0}.bjLobbySeat{padding:11px}.bjStake>b{font-size:19px}.bjLobbyConsole{align-items:stretch;flex-direction:column;gap:16px}.bjBetForm{max-width:none}.bjBetControls{gap:4px}.bjExperience .bjBetControls>button{padding:8px 10px}.bjHandsGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:16px 0}.bjHandsGrid .playerSeat{padding:9px;grid-template-columns:minmax(0,1fr) 30px}.bjHandsGrid .seatAvatar{display:none}.bjHandsGrid .seatNameRow strong{font-size:11px}.bjHandsGrid .blackjackSeatStats{gap:8px}.bjHandsGrid .blackjackSeatStats b{font-size:10px}.bjHandsGrid .seatScore b{font-size:21px}.bjHandsGrid .seatCards .playingCard{width:38px;height:54px}.bjHandsGrid .seatCards{gap:3px}.bjBankCards .playingCard{width:45px;height:65px}.bjBankCards{min-height:75px;gap:5px}.bjDealerIdentity{gap:8px}.bjDealerIdentity>strong{font-size:21px}.bjPlayerConsole{padding:12px;bottom:5px}.bjMyMetrics{gap:12px}.bjMyMetrics b{font-size:17px}.bjExperience .bjPlayerActions button{padding:10px 6px;font-size:11px;min-height:44px;gap:6px}.bjDealerConsole>div:first-child{width:100%;margin-bottom:8px}.bjDealerConsole>button{flex:1}}
