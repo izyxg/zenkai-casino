@@ -47,6 +47,7 @@ export type PokerState = {
   handLabel?:string;
   pot:number;
   acted:string[];
+  lastActionBet?:Record<string,number>;
   winners?:Array<{playerId:string;amount:number;label:string}>;
 };
 

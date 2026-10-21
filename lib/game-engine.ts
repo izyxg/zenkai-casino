@@ -29,7 +29,8 @@ export function publicGameState(state:AnyGameState,viewerId:string,dealerCardCho
       s.handLabel=bestPokerHand([...s.hole[viewerId],...s.board]).label;
     }
     for(const id of Object.keys(s.hole)){
-      if(id!==viewerId&&s.stage!=="SHOWDOWN") s.hole[id]=["??" as Card,"??" as Card];
+      const folded=s.seats.find(seat=>seat.playerId===id)?.folded;
+      if(id!==viewerId&&(s.stage!=="SHOWDOWN"||folded||s.board.length<5)) s.hole[id]=["??" as Card,"??" as Card];
     }
     return s;
   }

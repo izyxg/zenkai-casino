@@ -8,13 +8,20 @@ Maison de jeu **100 % RP** pour Zenkai, sous le nom **Le Cercle du Ryô**. Les R
 - Pseudo RP sans compte pour le MVP
 - Solde virtuel par room + ledger de transactions
 - Pile ou Face serveur-authoritaire
-- Blackjack multijoueur contre le croupier
+- Blackjack jusqu'à 13 places, sabot de six jeux, mises exactes et croupier hôte ou automatique
 - En mode croupier hôte, tirage aléatoire ou menu de sélection selon l'autorisation privée de la table
 - Texas Hold'em 2 à 13 joueurs avec blinds tournantes, check/call/raise/fold/all-in, showdown et side pots
 - Journal RP copiable
-- Contrôles hôte : verrouillage, reset des soldes, fermeture
+- Contrôles hôte : capacité de 2 à 13 places entre les manches, verrouillage, réglage et reset des soldes, fermeture
 - Reconnexion par token local
 - Rafraîchissement quasi temps réel par polling (compatible Vercel sans serveur WebSocket persistant)
+- Interface adaptative : rangées de sièges de poker défilables sur mobile, mises et relances exactes, raccourcis de montant, confirmation du tapis
+
+## Vérification
+
+`npm test` couvre les règles, la confidentialité des snapshots et les routes avec une base simulée. `npm run build` valide la compilation sans modifier la base.
+
+`tests/browser-qa.mjs` teste l'interface desktop/mobile avec des snapshots locaux : 13 places, mise exacte, relance, modes de croupier et connexion lente. Il nécessite Playwright (ou `PLAYWRIGHT_MODULE` vers son module) et une instance locale via `QA_URL` (par défaut `http://127.0.0.1:3100`). Les captures et le rapport sont écrits dans `qa-output/`, non versionné. Ces essais ne créent pas de table et ne modifient pas les soldes en production.
 
 ## Stack
 
@@ -45,7 +52,7 @@ Si une future modification Prisma nécessite une suppression ou une transformati
 
 ## Temps réel
 
-Pour rester simple et compatible avec l'hébergement serverless Vercel, le MVP utilise un polling client toutes les ~1,4 seconde. La logique et les résultats restent calculés côté serveur. Une future version peut remplacer ce polling par Supabase Realtime, Ably ou Pusher sans modifier les moteurs de jeu.
+Le polling est séquentiel : 900 ms après une réponse pendant une main, 1,8 s au repos, pause lorsque l'onglet est masqué et reprise à son retour. Les erreurs ralentissent les nouvelles tentatives. Une réponse ancienne ne remplace pas le résultat d'une action. La présence en base est rafraîchie au maximum une fois toutes les cinq secondes. La logique et les résultats restent calculés côté serveur.
 
 ## Sécurité / fair-play
 
@@ -55,7 +62,7 @@ Pour rester simple et compatible avec l'hébergement serverless Vercel, le MVP u
 - En mode automatique, les cartes sont tirées côté serveur. Pour les tables autorisées en mode croupier hôte, le serveur vérifie le rôle, le tour, la disponibilité de la carte et la règle des 17 points.
 - Le menu est réservé au croupier hôte ; les autres joueurs et le journal public voient les révélations et tirages habituels, sans mention du choix manuel. Les joueurs ne choisissent jamais leurs propres cartes, les gagnants ou les paiements.
 - Le paquet de Blackjack n'est pas exposé dans les réponses API ; seule la liste sans ordre des cartes sélectionnables est fournie au croupier hôte pendant son tour.
-- Les cartes privées de poker des autres joueurs sont masquées dans les réponses API jusqu'au showdown.
+- Le paquet de poker n'est jamais envoyé au navigateur. Les cartes privées des autres joueurs sont masquées jusqu'au showdown.
 - Chaque joueur dispose d'un token de session temporaire ; seul son hash SHA-256 est stocké.
 - Les mouvements de Ryôs sont enregistrés dans `Transaction`.
 

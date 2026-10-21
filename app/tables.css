@@ -30,7 +30,7 @@
 .pokerEmptyCard{display:grid;place-items:center;border:1px dashed #789a8766;background:#0b221b66;color:#658c77;font:20px Georgia,serif}
 .pokerBoardMeta{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;font-size:10px;color:#a6bfae}
 .pokerBoardMeta span{display:flex;align-items:center;gap:5px}.pokerBoardMeta b{color:#f0e6d4}
-.pokerConsole{position:sticky;bottom:12px;z-index:21;display:flex;gap:20px;padding:16px;background:#101613f5;border:1px solid #3e5044;border-radius:8px;margin-top:14px;box-shadow:0 8px 30px #0005;backdrop-filter:blur(16px)}
+.pokerConsole{position:relative;z-index:1;display:flex;gap:20px;padding:16px;background:#101613f5;border:1px solid #3e5044;border-radius:8px;margin-top:14px;box-shadow:0 8px 30px #0005}
 .pokerConsole.yourTurn{border-color:#74dfba}
 .pokerOwnHand{display:flex;align-items:center;gap:12px;min-width:180px;flex:0 0 auto}
 .pokerOwnCards{display:flex;gap:4px}.pokerOwnHand>div:last-child{display:flex;flex-direction:column;gap:5px}
@@ -66,3 +66,4 @@
 @media(max-width:1250px){.pokerConsole{flex-direction:column;gap:12px}.pokerOwnHand{min-width:0}.pokerOwnHand .playingCard{width:32px;height:45px}.pokerOwnCards{min-height:45px}.pokerOwnHand>div:last-child{flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px}.pokerWaiting{justify-content:flex-start}}
 @media(max-width:700px){.pokerHeading h1{font-size:25px}.pokerHeading{padding:18px 4px}.pokerTurn{font-size:11px}.pokerArena{padding:10px}.pokerSeatsRow{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.pokerSeat{padding:7px}.pokerSeatTop{flex-wrap:wrap;gap:3px}.pokerSeatTop strong{font-size:10px;max-width:100%}.pokerSeatHand .playingCard{width:32px;height:45px}.pokerSeatHand{min-height:61px}.pokerSeatWallet{font-size:11px}.pokerSeatTop abbr{width:16px;height:16px;font-size:7px}.pokerSeatStatus{font-size:9px}.pokerCommunity .playingCard,.pokerEmptyCard{width:49px;height:70px}.pokerBoard{min-height:250px;gap:13px}.pokerConsole{bottom:5px;padding:10px}.pokerRaise{grid-template-columns:1fr 1fr auto}.raiseSizing{grid-column:1 / -1}.raiseSizing button{flex:1}.pokerMainActions button{font-size:11px;padding:8px 4px}.pokerBoardMeta{gap:10px}.pokerNext{flex-wrap:wrap}.pokerOwnHand>div:last-child{gap:5px 10px}.pokerStreets,.pokerStreets li{gap:8px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+@media(max-width:700px){.pokerSeatsRow{display:flex;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 9px;scrollbar-color:#668675 #10251c}.pokerSeatsRow>.pokerSeat{flex:0 0 106px;scroll-snap-align:start}.pokerConsole{bottom:auto}}

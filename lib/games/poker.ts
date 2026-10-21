@@ -3,6 +3,7 @@ import { bestPokerHand, compareScore, freshDeck, shuffle, type Card } from "../c
 import type { PokerState } from "../game-types";
 import { changeBalance, logEvent } from "./shared";
 import { MAX_TABLE_PLAYERS } from "../table-limits";
+import {canReopenRaise} from "../poker-rules";
 
 export async function newPokerState(room:any):Promise<PokerState>{
   const eligible=room.players.filter((p:any)=>p.balance>=room.minBet);
@@ -38,7 +39,7 @@ async function advance(game:any,s:PokerState){
   const able=active(s).filter(x=>!x.allIn);
   const noMoreBets=able.length<=1&&(!able[0]||able[0].roundBet>=s.currentBet);
   if(!roundDone(s)&&!noMoreBets){s.currentIndex=next(s,s.currentIndex);await prisma.game.update({where:{id:game.id},data:{state:s as any}});return;}
-  s.seats.forEach(x=>x.roundBet=0);s.currentBet=0;s.acted=[];s.minRaise=s.bigBlind??s.minRaise;
+  s.seats.forEach(x=>x.roundBet=0);s.currentBet=0;s.acted=[];s.lastActionBet={};s.minRaise=s.bigBlind??s.minRaise;
   if(s.stage==="PREFLOP"){s.board.push(s.deck.pop()!,s.deck.pop()!,s.deck.pop()!);s.stage="FLOP";}else if(s.stage==="FLOP"){s.board.push(s.deck.pop()!);s.stage="TURN";}else if(s.stage==="TURN"){s.board.push(s.deck.pop()!);s.stage="RIVER";}else return showdown(game,s);
   s.currentIndex=next(s,s.dealerIndex);if(active(s).filter(x=>!x.allIn).length<=1)return advance(game,s);await prisma.game.update({where:{id:game.id},data:{state:s as any}});
 }
@@ -59,7 +60,7 @@ export async function pokerAction(gameId:string,playerId:string,action:"FOLD"|"C
 
   const player=await prisma.player.findUniqueOrThrow({where:{id:playerId}});
   const toCall=Math.max(0,s.currentBet-seat.roundBet);
-  const raiseReopened=!s.acted.includes(playerId);
+  const raiseReopened=canReopenRaise(s,playerId);
   let eventMessage="";
 
   const pay=async(v:number)=>{
@@ -111,5 +112,6 @@ export async function pokerAction(gameId:string,playerId:string,action:"FOLD"|"C
 
   if(eventMessage) await logEvent(game.roomId,"POKER_ACTION",eventMessage,game.id);
   if(!s.acted.includes(playerId)) s.acted.push(playerId);
+  s.lastActionBet={...s.lastActionBet,[playerId]:s.currentBet};
   await advance(game,s);
 }

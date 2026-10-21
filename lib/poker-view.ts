@@ -1,4 +1,5 @@
 import type { PokerState } from "./game-types";
+import {canReopenRaise} from "./poker-rules";
 
 export function pokerControls(state: PokerState, playerId: string, balance: number) {
   const seat=state.seats.find(s=>s.playerId===playerId);
@@ -6,7 +7,7 @@ export function pokerControls(state: PokerState, playerId: string, balance: numb
   const call=Math.max(0,state.currentBet-contributed);
   const minRaise=state.currentBet+state.minRaise;
   const maxRaise=contributed+balance;
-  const reopened=!state.acted.includes(playerId);
+  const reopened=canReopenRaise(state,playerId);
   return {seat,call,callPayment:Math.min(call,balance),minRaise,maxRaise,
     canRaise:!!seat&&!seat.folded&&!seat.allIn&&reopened&&maxRaise>=minRaise,
     canAllIn:!!seat&&!seat.folded&&!seat.allIn&&balance>0&&(reopened||balance<=call),

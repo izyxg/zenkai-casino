@@ -6,6 +6,7 @@ vi.mock("../lib/games/shared",()=>({changeBalance:m.pay,logEvent:m.log}));
 import {newPokerState,pokerAction,beginPokerHand} from "../lib/games/poker";
 import {publicGameState} from "../lib/game-engine";
 import {pokerControls,pokerPositions} from "../lib/poker-view";
+import {canReopenRaise} from "../lib/poker-rules";
 let wallets:Record<string,number>,game:any;
 beforeEach(()=>{
   vi.resetAllMocks();wallets={};game={id:"g",roomId:"r",status:"ACTIVE"};
@@ -70,4 +71,20 @@ it("keeps all-in calls affordable and presets within the legal total",async()=>{
   expect(view.callPayment).toBe(40);expect(view.canRaise).toBe(false);
   const rich=pokerControls(s,"p0",1000);
   expect(rich.presets.every(p=>p.amount>=rich.minRaise&&p.amount<=rich.maxRaise)).toBe(true);
+});
+it("cumulative short all-ins reopen the raise only after a full increment",async()=>{
+  const s=await newPokerState(room(4));
+  s.minRaise=100;s.currentBet=150;s.acted=["p0"];s.lastActionBet={p0:100};
+  expect(canReopenRaise(s,"p0")).toBe(false);
+  s.currentBet=200;expect(canReopenRaise(s,"p0")).toBe(true);
+  s.lastActionBet.p0=150;expect(canReopenRaise(s,"p0")).toBe(false);
+  expect(canReopenRaise(s,"p1")).toBe(true);
+});
+it("does not reveal folded hands or an uncontested winner's cards",async()=>{
+  const s=await newPokerState(room(3));
+  s.stage="SHOWDOWN";s.seats[1].folded=true;
+  expect((publicGameState(s,"p0") as PokerState).hole.p2).toEqual(["??","??"]);
+  s.board=s.deck.splice(0,5);
+  const view=publicGameState(s,"p0") as PokerState;
+  expect(view.hole.p1).toEqual(["??","??"]);expect(view.hole.p2).toEqual(s.hole.p2);
 });

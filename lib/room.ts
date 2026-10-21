@@ -7,7 +7,10 @@ export async function authenticatePlayer(roomCode:string, playerId:string, token
   if(!room) throw new Error("Salon introuvable");
   const player=room.players.find(p=>p.id===playerId);
   if(!player||player.sessionHash!==hashToken(token)) throw new Error("Accès invalide");
-  await prisma.player.update({where:{id:player.id},data:{lastSeen:new Date()}});
+  // Keep presence fresh without a database write for every short poll.
+  if(Date.now()-new Date(player.lastSeen).getTime()>=5000){
+    await prisma.player.update({where:{id:player.id},data:{lastSeen:new Date()}});
+  }
   return {room,player};
 }
 

@@ -4,6 +4,8 @@ import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import GamePanel from "@/components/GamePanel";
 import CapacitySettings from "@/components/CapacitySettings";
+import {Check,Copy,LockKeyhole,LogOut,Pencil,RotateCcw,UnlockKeyhole,X} from "lucide-react";
+import {roomPollDelay} from "@/lib/polling";
 
 const storageKey=(code:string)=>`zenkai-casino:${code}`;
 const gameNames:Record<string,string>={
@@ -25,6 +27,10 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
   const [balanceInput,setBalanceInput]=useState("");
   const actionLock=useRef(false);
   const requestSeq=useRef(0);
+  const pollRequest=useRef<AbortController|null>(null);
+  const activeHand=useRef(false);
+  const pollFailures=useRef(0);
+  useEffect(()=>{activeHand.current=snap?.game?.status==="ACTIVE";},[snap?.game?.status]);
 
   useEffect(()=>{
     try{
@@ -37,25 +43,41 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
   },[code,router]);
 
   const load=useCallback(async()=>{
-    if(!session||actionLock.current) return;
+    if(!session||actionLock.current||pollRequest.current||document.hidden) return;
+    const controller=new AbortController();
+    pollRequest.current=controller;
     const seq=++requestSeq.current;
     try{
-      const response=await fetch(`/api/rooms/${code}?playerId=${encodeURIComponent(session.playerId)}&token=${encodeURIComponent(session.sessionToken)}`,{cache:"no-store"});
+      const response=await fetch(`/api/rooms/${code}?playerId=${encodeURIComponent(session.playerId)}&token=${encodeURIComponent(session.sessionToken)}`,{cache:"no-store",signal:controller.signal});
       const data=await response.json();
       if(!response.ok) throw new Error(data.error);
       if(seq===requestSeq.current){
         setSnap(data);
         setError("");
+        pollFailures.current=0;
       }
     }catch(e:any){
-      if(seq===requestSeq.current) setError(e.message);
+      if(!controller.signal.aborted&&seq===requestSeq.current){setError(e.message);pollFailures.current++;}
+    }finally{
+      if(pollRequest.current===controller) pollRequest.current=null;
     }
   },[code,session]);
 
   useEffect(()=>{
-    load();
-    const timer=setInterval(load,900);
-    return()=>clearInterval(timer);
+    let stopped=false;
+    let timer:ReturnType<typeof setTimeout>;
+    const tick=async()=>{
+      await load();
+      if(!stopped) timer=setTimeout(tick,roomPollDelay(document.hidden,activeHand.current,pollFailures.current));
+    };
+    const onVisible=()=>{if(!document.hidden) void load();};
+    void tick();
+    document.addEventListener("visibilitychange",onVisible);
+    return()=>{
+      stopped=true;clearTimeout(timer);requestSeq.current++;
+      pollRequest.current?.abort();pollRequest.current=null;
+      document.removeEventListener("visibilitychange",onVisible);
+    };
   },[load]);
 
   useEffect(()=>{
@@ -94,10 +116,12 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
   const me=useMemo(()=>snap?.players?.find((p:any)=>p.id===session?.playerId),[snap,session]);
   const summary=useMemo(()=>snap?.events?.map((e:any)=>e.message).join("\n")??"",[snap]);
 
-  function copy(value:string,label:string){
-    navigator.clipboard.writeText(value);
-    setCopied(label);
-    setTimeout(()=>setCopied(""),1400);
+  async function copy(value:string,label:string){
+    try{
+      await navigator.clipboard.writeText(value);
+      setCopied(label);
+      setTimeout(()=>setCopied(""),1400);
+    }catch{setError("Copie indisponible. Sélectionnez le code ou le registre.");}
   }
 
   if(!snap||!me){
@@ -122,9 +146,9 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
       </div>
 
       <div className="roomIdentity">
-        <span className="roomState"><i className={isActive?"live":""}/>{isActive?"PARTIE EN COURS":"TABLE OUVERTE"}</span>
+        <span className="roomState"><i className={isActive?"live":""}/>{snap.status==="CLOSED"?"SALON FERMÉ":isActive?"PARTIE EN COURS":"TABLE OUVERTE"}</span>
         <button className="roomCode" onClick={()=>copy(snap.code,"code")} title="Copier le code">
-          <small>SALON</small><b>{snap.code}</b><span>{copied==="code"?"COPIÉ":"COPIER"}</span>
+          <small>SALON</small><b>{snap.code}</b>{copied==="code"?<Check size={16}/>:<Copy size={16}/>}
         </button>
       </div>
 
@@ -148,11 +172,11 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
             {snap.gameType==="BLACKJACK"&&<span>{snap.blackjackDealerMode==="HOST"?"Croupier : hôte":"Croupier : maison"}</span>}
           </div>
           <button className="iconTextBtn" onClick={()=>copy(summary,"log")}>
-            <span>⌘</span>{copied==="log"?"Registre copié":"Copier le registre"}
+            {copied==="log"?<Check size={15}/>:<Copy size={15}/>}Registre
           </button>
         </div>
 
-        <GamePanel snap={snap} me={me} act={async (action,payload)=>{await act(action,payload);}} busy={busy} error={error}/>
+        <GamePanel snap={snap} me={me} act={async (action,payload)=>{await act(action,payload);}} busy={busy||snap.status==="CLOSED"} error={error}/>
 
         {me.isHost&&<section className="hostDeck">
           <div className="hostDeckTitle">
@@ -161,15 +185,15 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
           </div>
           <div className="hostActions">
             <button className="hostAction" disabled={busy} onClick={()=>act("LOCK",{locked:!snap.locked})}>
-              <span>{snap.locked?"⌁":"⌾"}</span>
+              <span>{snap.locked?<UnlockKeyhole size={18}/>:<LockKeyhole size={18}/>}</span>
               <div><b>{snap.locked?"Déverrouiller":"Verrouiller"}</b><small>Contrôler les entrées</small></div>
             </button>
             <button className="hostAction" disabled={busy||isActive} onClick={()=>act("RESET_BALANCES")}>
-              <span>↻</span>
+              <span><RotateCcw size={18}/></span>
               <div><b>Reset soldes</b><small>Remettre tout le monde à {snap.startingBalance.toLocaleString("fr-FR")}</small></div>
             </button>
             <button className="hostAction danger" disabled={busy||isActive} onClick={()=>act("CLOSE")}>
-              <span>×</span>
+              <span><LogOut size={18}/></span>
               <div><b>Fermer le salon</b><small>Mettre fin à cette table</small></div>
             </button>
           </div>
@@ -201,9 +225,9 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
                   <button type="button" disabled={busy||isActive||snap.status==="CLOSED"} className="balanceEditBtn"
                     onClick={()=>{setEditingBalance(editingBalance===p.id?null:p.id);setBalanceInput(String(p.balance));}}
                     title={isActive?"Disponible entre les manches":"Modifier le solde de "+p.name}
-                    aria-label={"Modifier le solde de "+p.name}>✎</button>
+                    aria-label={"Modifier le solde de "+p.name}><Pencil size={13}/></button>
                   {!p.isHost&&!isActive&&<button disabled={busy} className="kickBtn"
-                    onClick={()=>act("KICK",{playerId:p.id})} title="Expulser" aria-label={"Expulser "+p.name}>×</button>}
+                    onClick={()=>act("KICK",{playerId:p.id})} title="Expulser" aria-label={"Expulser "+p.name}><X size={13}/></button>}
                 </div>}
                 {me.isHost&&editingBalance===p.id&&!isActive&&<form className="balanceEditor"
                   onSubmit={async e=>{

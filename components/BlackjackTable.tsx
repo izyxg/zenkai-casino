@@ -24,7 +24,8 @@ export default function BlackjackTable({snap,me,busy,error,act,onNext}:{
   const dealerScore=handTotal(s.dealer),myScore=mine?handTotal(mine.cards):null;
   const visibleScore=handTotal(s.dealer.filter((c:string)=>c!=="??"));
   const canDouble=turn&&mine?.cards.length===2&&me.balance>=mine.bet;
-  const players=snap.players.filter((p:any)=>!(s.dealerMode==="HOST"&&p.id===s.dealerPlayerId));
+  const players=snap.players.filter((p:any)=>!(s.dealerMode==="HOST"&&p.id===s.dealerPlayerId))
+    .sort((a:any,b:any)=>Number(b.id===me.id)-Number(a.id===me.id));
   const play=(move:"REVEAL"|"DRAW")=>{
     if(s.dealerAvailableCards) setChoice(move);
     else void act("BLACKJACK_DEALER",{move});
@@ -41,13 +42,6 @@ export default function BlackjackTable({snap,me,busy,error,act,onNext}:{
         <div className="bjRuleTags"><span>Blackjack 3:2</span><span>La banque reste à 17</span></div>
       </div>
     </div>
-    <div className="bjHandsGrid">{players.map((p:any)=>{
-      const hand=s.hands[p.id];
-      return <PlayerSeat key={p.id} player={p} isMe={p.id===me.id}
-        active={!finished&&s.dealerPhase==="PLAYERS"&&currentId===p.id} table="blackjack"
-        cards={hand?.cards??[]} bet={hand?.bet??0} score={hand?handTotal(hand.cards):undefined}
-        status={hand?blackjackLabels[hand.status]??hand.status:"Spectateur"}/>;
-    })}</div>
     {mine&&<div className={`bjPlayerConsole ${turn?"yourTurn":""}`}>
       <div className="bjMyMetrics"><div><span>Votre main</span><b className={myScore!==null&&myScore>21?"bust":""}>{myScore}</b></div>
         <div><span>Mise</span><b>{fmt(mine.bet)}<small>Ryôs</small></b></div>
@@ -65,6 +59,13 @@ export default function BlackjackTable({snap,me,busy,error,act,onNext}:{
         <><button disabled={busy||(dealerScore??0)>=17} onClick={()=>play("DRAW")}><Plus size={18}/>Tirer</button>
           <button className="bjDealButton" disabled={busy||(dealerScore??0)<17} onClick={()=>act("BLACKJACK_DEALER",{move:"SETTLE"})}><Check size={18}/>Régler la table</button></>}
     </div>}
+    <div className="bjHandsGrid">{players.map((p:any)=>{
+      const hand=s.hands[p.id];
+      return <PlayerSeat key={p.id} player={p} isMe={p.id===me.id}
+        active={!finished&&s.dealerPhase==="PLAYERS"&&currentId===p.id} table="blackjack"
+        cards={hand?.cards??[]} bet={hand?.bet??0} score={hand?handTotal(hand.cards):undefined}
+        status={hand?blackjackLabels[hand.status]??hand.status:"Spectateur"}/>;
+    })}</div>
     {!mine&&!isDealer&&!finished&&<p className="bjWaiting">Vous êtes spectateur pour cette manche.</p>}
     {isDealer&&dealerTurn&&choice&&s.dealerAvailableCards&&<DealerCardPicker
       key={game.id+choice+s.dealer.length} move={choice} cards={s.dealerAvailableCards} busy={busy} error={error}
