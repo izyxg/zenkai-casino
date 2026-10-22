@@ -27,7 +27,8 @@ export default function Home() {
     try{
       const response=await fetch(mode==="create"?"/api/rooms":"/api/rooms/join",{
         method:"POST",headers:{"content-type":"application/json"},
-        body:JSON.stringify(mode==="create"?{...fields,gameType,maxPlayers:gameType==="COINFLIP"?2:capacity}:fields)
+        body:JSON.stringify(mode==="create"?{...fields,gameType,maxPlayers:gameType==="COINFLIP"?2:capacity}:
+          {...fields,...(fields.spectator==="on"?{spectator:true}:{})})
       });
       const data=await response.json();
       if(!response.ok)throw new Error(data.error||"La connexion a échoué");
@@ -75,8 +76,9 @@ export default function Home() {
             {gameType==="BLACKJACK"&&<fieldset className="homeDealerChoice"><legend>Croupier</legend>
               <label><input type="radio" name="blackjackDealerMode" value="HOST" defaultChecked disabled={busy}/>Hôte</label>
               <label><input type="radio" name="blackjackDealerMode" value="AUTO" disabled={busy}/>Maison automatique</label></fieldset>}
-          </>:<div className="field full"><label htmlFor="join-code">Code du salon</label>
-            <input id="join-code" name="code" placeholder="A7K9QX" minLength={4} maxLength={8} autoCapitalize="characters" autoComplete="off" required disabled={busy}/></div>}
+          </>:<><div className="field full"><label htmlFor="join-code">Code du salon</label>
+            <input id="join-code" name="code" placeholder="A7K9QX" minLength={4} maxLength={8} autoCapitalize="characters" autoComplete="off" required disabled={busy}/></div>
+            <label className="homeSpectator"><input type="checkbox" name="spectator" disabled={busy}/>Rejoindre en spectateur</label></>}
           <button className="homeSubmit" disabled={busy}>{busy?"Connexion…":mode==="create"?"Ouvrir la table":"Prendre place"}<ArrowRight size={18}/></button>
         </form>
       </section>

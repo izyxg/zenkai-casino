@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { authenticatePlayer, roomSnapshot } from "@/lib/room";
-import { prisma } from "@/lib/prisma";
+import { prisma, withRoomMutation } from "@/lib/prisma";
+import {recoverGame} from "@/lib/game-recovery";
+import {isHandParticipant} from "@/lib/turn-progress";
 import { validateCapacity } from "@/lib/table-limits";
 import {
   blackjackAction,
@@ -17,6 +19,8 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
     const {code}=await params;
     const body=await req.json();
     const {playerId,sessionToken,action,payload={}}=body;
+    const authenticated=await authenticatePlayer(code,playerId,sessionToken);
+    return await withRoomMutation(authenticated.room.id,async()=>{
     const {room,player}=await authenticatePlayer(code,playerId,sessionToken);
 
     const active=await prisma.game.findFirst({
@@ -24,7 +28,16 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
       orderBy:{startedAt:"desc"}
     });
 
-    if(action==="SET_BET"){
+    if(action==="RECOVER_GAME"){
+      await recoverGame(room.id,player,payload);
+    }else if(action==="SET_PARTICIPATION"){
+      if(room.status==="CLOSED") throw new Error("Salon fermé");
+      if(room.gameType==="COINFLIP") throw new Error("Ce jeu nécessite deux participants");
+      if(typeof payload.spectator!=="boolean") throw new Error("Mode invalide");
+      if(active&&isHandParticipant(active.state as any,player.id)) throw new Error("Termine ta manche avant de changer de place");
+      await prisma.player.update({where:{id:player.id},data:{isSpectator:payload.spectator,currentBet:0}});
+      await logEvent(room.id,"PARTICIPATION",`${player.name} ${payload.spectator?"passe spectateur":"prend place pour la prochaine manche"}.`);
+    }else if(action==="SET_BET"){
       await setBet(player.id,Number(payload.bet));
       await logEvent(room.id,"BET_SET",`${player.name} prépare une mise de ${Number(payload.bet)} Ryôs.`);
     }else if(action==="SET_DEALER_MODE"){
@@ -137,6 +150,7 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
 
     const snapshot=await roomSnapshot(code,player.id);
     return NextResponse.json({ok:true,snapshot});
+    });
   }catch(e:any){
     return NextResponse.json({error:e.message??"Erreur"},{status:400});
   }

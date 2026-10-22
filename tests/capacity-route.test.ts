@@ -1,7 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 const m=vi.hoisted(()=>({auth:vi.fn(),active:vi.fn(),snapshot:vi.fn(),transaction:vi.fn(),read:vi.fn(),update:vi.fn(),event:vi.fn()}));
 vi.mock("../lib/room",()=>({authenticatePlayer:m.auth,roomSnapshot:m.snapshot}));
-vi.mock("../lib/prisma",()=>({prisma:{game:{findFirst:m.active},$transaction:m.transaction}}));
+vi.mock("../lib/prisma",()=>({withRoomMutation:(_id:string,work:()=>unknown)=>work(),prisma:{game:{findFirst:m.active},$transaction:m.transaction}}));
 vi.mock("../lib/game-engine",()=>({blackjackAction:vi.fn(),blackjackDealerAction:vi.fn(),coinCommit:vi.fn(),logEvent:vi.fn(),pokerAction:vi.fn(),setBet:vi.fn(),startGame:vi.fn()}));
 import {POST} from "../app/api/rooms/[code]/action/route";
 beforeEach(()=>{
@@ -22,8 +22,9 @@ it.each([1,5,14,3.5,"13",null])("rejects invalid or below-occupancy capacity %s"
   expect((await post(n)).status).toBe(400);expect(m.update).not.toHaveBeenCalled();
 });
 it("rejects a member, active hand and closed room",async()=>{
-  m.auth.mockResolvedValueOnce({room:{id:"r"},player:{isHost:false}});
+  m.auth.mockResolvedValue({room:{id:"r"},player:{isHost:false}});
   expect((await post(13)).status).toBe(400);
+  m.auth.mockResolvedValue({room:{id:"r",status:"LOBBY"},player:{id:"h",isHost:true}});
   m.active.mockResolvedValueOnce({id:"g"});expect((await post(13)).status).toBe(400);
   m.read.mockResolvedValueOnce({status:"CLOSED",gameType:"POKER",_count:{players:6}});
   expect((await post(13)).status).toBe(400);expect(m.update).not.toHaveBeenCalled();

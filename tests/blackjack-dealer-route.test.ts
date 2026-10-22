@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 
 const mocks=vi.hoisted(()=>({authenticatePlayer:vi.fn(),roomSnapshot:vi.fn(),findFirst:vi.fn(),dealer:vi.fn()}));
 vi.mock("../lib/room",()=>({authenticatePlayer:mocks.authenticatePlayer,roomSnapshot:mocks.roomSnapshot}));
-vi.mock("../lib/prisma",()=>({prisma:{game:{findFirst:mocks.findFirst}}}));
+vi.mock("../lib/prisma",()=>({withRoomMutation:(_id:string,work:()=>unknown)=>work(),prisma:{game:{findFirst:mocks.findFirst}}}));
 vi.mock("../lib/game-engine",()=>({blackjackDealerAction:mocks.dealer,blackjackAction:vi.fn(),coinCommit:vi.fn(),
   logEvent:vi.fn(),pokerAction:vi.fn(),setBet:vi.fn(),startGame:vi.fn()}));
 import { POST } from "../app/api/rooms/[code]/action/route";

@@ -4,6 +4,7 @@ import { blackjackValue, freshDeck, shuffle } from "../cards";
 import { chooseBlackjackDealerCard, resolveBlackjackHand } from "../blackjack-rules";
 import type { BlackjackState } from "../game-types";
 import { changeBalance, logEvent } from "./shared";
+import {blackjackTurnIndex} from "../turn-progress";
 
 function activePlayableHands(state:BlackjackState){
   return Object.values(state.hands).filter(h=>h.status!=="BUST");
@@ -15,6 +16,7 @@ export async function newBlackjackState(room:any):Promise<BlackjackState>{
   if(dealerMode==="HOST"&&!dealerPlayer) throw new Error("Croupier introuvable");
 
   const eligible=room.players.filter((p:any)=>{
+    if(p.isSpectator) return false;
     if(dealerMode==="HOST"&&p.isHost) return false;
     return p.currentBet>=room.minBet&&p.currentBet<=room.maxBet&&p.balance>=p.currentBet;
   });
@@ -54,9 +56,7 @@ export async function newBlackjackState(room:any):Promise<BlackjackState>{
     dealerRevealed:false
   };
 
-  while(state.turnIndex<state.order.length&&state.hands[state.order[state.turnIndex]].status!=="PLAYING"){
-    state.turnIndex++;
-  }
+  state.turnIndex=blackjackTurnIndex(state);
 
   if(state.turnIndex>=state.order.length){
     state.dealerPhase="DEALER";
@@ -160,7 +160,9 @@ export async function blackjackAction(gameId:string,playerId:string,action:"HIT"
   const game=await prisma.game.findUniqueOrThrow({where:{id:gameId}});
   const state=game.state as unknown as BlackjackState;
 
-  if(state.kind!=="BLACKJACK"||state.settled) throw new Error("La manche est déjà terminée");
+  if(game.status!=="ACTIVE"||state.kind!=="BLACKJACK"||state.settled) throw new Error("La manche est déjà terminée");
+  if(!["HIT","STAND","DOUBLE"].includes(action)) throw new Error("Action de blackjack invalide");
+  state.turnIndex=blackjackTurnIndex(state);
   if(state.dealerPhase!=="PLAYERS") throw new Error("Le tour des joueurs est terminé");
   if(state.order[state.turnIndex]!==playerId) throw new Error("Attends ton tour");
 
@@ -212,12 +214,7 @@ export async function blackjackAction(gameId:string,playerId:string,action:"HIT"
 
   if(h.status!=="PLAYING") state.turnIndex++;
 
-  while(
-    state.turnIndex<state.order.length&&
-    state.hands[state.order[state.turnIndex]].status!=="PLAYING"
-  ){
-    state.turnIndex++;
-  }
+  state.turnIndex=blackjackTurnIndex(state);
 
   if(state.turnIndex>=state.order.length){
     // If everyone busted, there is no reason to make the dealer draw.
@@ -235,6 +232,17 @@ export async function blackjackAction(gameId:string,playerId:string,action:"HIT"
     return;
   }
 
+  await prisma.game.update({where:{id:game.id},data:{state:state as any}});
+}
+
+export async function repairBlackjackTurn(game:any,state:BlackjackState){
+  if(state.dealerPhase!=="PLAYERS") return;
+  state.turnIndex=blackjackTurnIndex(state);
+  if(state.turnIndex>=state.order.length){
+    if(activePlayableHands(state).length===0) return settleBlackjack(game,state,false);
+    if(state.dealerMode==="AUTO") return settleBlackjack(game,state,true);
+    state.dealerPhase="DEALER";
+  }
   await prisma.game.update({where:{id:game.id},data:{state:state as any}});
 }
 

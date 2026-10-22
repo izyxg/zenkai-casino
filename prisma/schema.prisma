@@ -55,6 +55,7 @@ model Player {
   balance      Int
   currentBet   Int           @default(0)
   isHost       Boolean       @default(false)
+  isSpectator  Boolean       @default(false)
   joinedAt     DateTime      @default(now())
   lastSeen     DateTime      @default(now())
   transactions Transaction[]

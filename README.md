@@ -54,6 +54,13 @@ Si une future modification Prisma nécessite une suppression ou une transformati
 
 Le polling est séquentiel : 900 ms après une réponse pendant une main, 1,8 s au repos, pause lorsque l'onglet est masqué et reprise à son retour. Les erreurs ralentissent les nouvelles tentatives. Une réponse ancienne ne remplace pas le résultat d'une action. La présence en base est rafraîchie au maximum une fois toutes les cinq secondes. La logique et les résultats restent calculés côté serveur.
 
+## Spectateurs et dépannage
+
+- L'option **Rejoindre en spectateur** permet d'observer sans recevoir de cartes ni bloquer les tours. Une arrivée pendant une manche est spectatrice par défaut. Le bouton au-dessus du tapis permet de participer à la prochaine manche ou de se retirer entre les manches.
+- Les anciens tours sans main jouable sont réparés automatiquement au rafraîchissement. Un joueur avec une vraie main n'est jamais passé automatiquement parce qu'il est hors ligne.
+- Pendant une manche, l'hôte dispose de **Débloquer la table** : vérifier les tours, faire rester un joueur au Blackjack / le coucher au poker, ou annuler et rembourser les mises engagées (y compris les doubles et les contributions des joueurs couchés).
+- Les interventions sont journalisées. Les actions d'une même table sont sérialisées dans une transaction PostgreSQL ; une confirmation devenue obsolète est refusée. Une annulation terminée ne peut pas être remboursée une seconde fois.
+
 ## Sécurité / fair-play
 
 - Les tirages aléatoires utilisent `crypto.randomInt` côté serveur.

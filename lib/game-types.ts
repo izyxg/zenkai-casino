@@ -1,6 +1,7 @@
 import type { Card } from "./cards";
 
 export type CoinState = {
+  cancelled?:boolean;
   kind: "COINFLIP";
   commits: Record<string,{bet:number;choice:"PILE"|"FACE"}>;
   result?: "PILE"|"FACE";
@@ -18,6 +19,7 @@ export type BlackjackHand = {
 };
 
 export type BlackjackState = {
+  cancelled?:boolean;
   kind:"BLACKJACK";
   deck:Card[];
   dealer:Card[];
@@ -33,6 +35,7 @@ export type BlackjackState = {
 
 export type PokerSeat = { playerId:string; folded:boolean; allIn:boolean; roundBet:number; totalBet:number };
 export type PokerState = {
+  cancelled?:boolean;
   kind:"POKER";
   deck:Card[];
   board:Card[];

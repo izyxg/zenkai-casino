@@ -59,6 +59,9 @@
 .cardTableFrame .bjBankCards .playingCard{width:64px;height:91px;flex:0 0 64px}
 .cardTableFrame .bjBankCards:has(.playingCard:nth-child(5)) .playingCard+.playingCard{margin-left:-30px}
 .cardTableFrame .bjRuleTags{justify-content:center;font-size:9px;color:#b5c9b4;margin-top:10px}
+.blackjackArena.crowded .bjDealerArt{height:112px;width:145px}
+.blackjackArena.crowded .bjBankCards{min-height:92px;margin-bottom:4px}
+.blackjackArena.crowded .bjRuleTags{margin-top:0;font-size:8px}
 .cardTableFrame .waitingTableArt{border:0;background:none;padding:0}
 .cardTableFrame .waitingTableArt h2{font-size:27px;margin:12px 0 8px}
 .cardTableFrame .waitingTableArt p{font-size:11px;color:#b1c8b7}
@@ -75,6 +78,28 @@
 .tableLobby{height:530px}
 .tableLobby .cardTableSeat{height:92px;justify-content:center}
 .tableLobby .bjHouse h2{margin-top:7px}
+.participationBar{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;padding:0 4px 10px;color:#a8b9ac}
+.homeForm .homeSpectator{grid-column:1/-1;display:flex;align-items:center;gap:9px;font-size:12px;color:#c7d3c6}
+.homeForm .homeSpectator input[type=checkbox]{width:16px;height:16px;padding:0;accent-color:#d8b972}
+.participationBar>span{display:flex;align-items:center;gap:7px}
+.participationBar button{background:none;color:#dfc58a;border:1px solid #665b4166;border-radius:5px;padding:7px 10px;cursor:pointer;font-size:11px}
+.participationBar button:disabled{opacity:.45}
+.recoveryTools{margin-top:18px;border-block:1px solid #5b554077;padding:14px 2px;font-size:12px}
+.recoveryTools summary{cursor:pointer;color:#d5c496;display:flex;align-items:center;gap:8px;width:fit-content}
+.recoveryActions{display:flex;flex-wrap:wrap;gap:8px;padding-top:14px}
+.recoveryActions button{display:flex;justify-content:center;align-items:center;gap:7px;border:1px solid #4d6353;background:#1a3024;color:#e3ebdf;border-radius:5px;min-height:40px;padding:9px 13px;cursor:pointer;font-size:12px;max-width:100%;overflow-wrap:anywhere}
+.recoveryActions .danger{background:#3c2429;border-color:#7c5057;color:#f1bdba}
+.recoveryActions button:disabled{opacity:.4}
+.cancelledNotice{font-size:12px;color:#e7d4a3;border-left:2px solid #c0a36e;padding:10px 12px;background:#292b1d}
+.cardTableFrame:not(.crowded):not(.tableLobby){height:620px}
+.cardTableFrame:not(.crowded) .cardTableSeat:not(.vacant){height:150px}
+.cardTableFrame:not(.crowded) .tableSeatCards{--card-width:52px}
+.cardTableFrame:not(.crowded) .tableSeatCards .playingCard.mini{height:74px}
+.cardTableFrame:not(.crowded) .tableSeatCards .cardCorner b{font-size:13px}
+.cardTableFrame:not(.crowded) .tableSeatCards .cardCorner span{font-size:10px}
+.cardTableFrame:not(.crowded) .tableSeatHand{min-height:82px}
+.cardTableFrame:not(.crowded) .pokerCommunity .playingCard,.cardTableFrame:not(.crowded) .pokerEmptyCard{width:70px;height:99px}
+.cardTableRail{background:repeating-linear-gradient(90deg,#ffffff02 0 1px,transparent 1px 3px),radial-gradient(ellipse at 50% 38%,#237459,#124d3b 72%,#0b3529);border-color:#33282b}
 @container card-game (max-width:900px){
   .cardTableFrame{--seat-width:112px}.cardTableFrame.crowded{--seat-width:100px}
   .tableSeatName{font-size:10px}.tableSeatCards{--card-width:40px}.tableSeatCards .playingCard.mini{height:57px}
@@ -82,6 +107,9 @@
   .pokerRaise{grid-template-columns:auto 130px minmax(50px,1fr) auto}.raiseSizing button{padding:5px}
 }
 @container card-game (max-width:700px){
+  .cardTableFrame:not(.crowded):not(.tableLobby){height:auto}
+  .cardTableFrame:not(.crowded) .cardTableSeat:not(.vacant){height:150px}
+  .cardTableFrame:not(.crowded) .pokerCommunity .playingCard,.cardTableFrame:not(.crowded) .pokerEmptyCard{width:48px;height:69px}
   .cardTableFrame,.cardTableFrame.tableLobby{--seat-width:100%;height:auto;min-height:370px;padding:20px 16px 30px}
   .cardTableRail{inset:5px 3px;border-width:9px;border-radius:130px / 90px}
   .cardTableRail>div{inset:12px;border-radius:115px / 78px}

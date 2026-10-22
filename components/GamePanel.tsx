@@ -19,21 +19,22 @@ export default function GamePanel({snap,me,act,error="",busy=false}:Props) {
   const next=()=>setDismissed(game.id);
   const lastEvent=snap.events?.at(-1)?.message;
 
-  if(!game||(game.status!=="ACTIVE"&&!showFinished)) {
+  if(!game||game.state.cancelled||(game.status!=="ACTIVE"&&!showFinished)) {
     if(snap.gameType==="BLACKJACK") return <BlackjackLobby snap={snap} me={me} busy={busy} act={act}/>;
     const poker=snap.gameType==="POKER";
-    const eligible=snap.players.filter((p:any)=>p.balance>=snap.minBet);
+    const seated=snap.players.filter((p:any)=>!p.isSpectator);
+    const eligible=seated.filter((p:any)=>p.balance>=snap.minBet);
     const canStart=poker?eligible.length>=2:snap.players.length===2;
     return <section className="tableWaiting">
       <header className="pokerHeading"><div><span className="eyebrow">LE CERCLE DU RYÔ</span>
         <h1>{poker?"Texas Hold’em":"Pile ou Face"}</h1></div><span className="pokerTurn"><i/>Table ouverte</span></header>
-      <CardTable className="tableLobby" label={poker?"Tapis de poker":"Table de duel"} seats={Array.from({length:Math.max(snap.players.length,Math.min(poker?6:2,snap.maxPlayers))},(_,i)=>{
-        const p=snap.players[i];
+      <CardTable className="tableLobby" label={poker?"Tapis de poker":"Table de duel"} seats={Array.from({length:Math.max(seated.length,Math.min(poker?6:2,snap.maxPlayers))},(_,i)=>{
+        const p=seated[i];
         return <TablePlayer key={p?.id??"empty"+i} name={p?.name} balance={p?.balance} isMe={p?.id===me.id}
           status={poker&&p?.balance<snap.minBet?"Solde insuffisant":p?.isHost?"Hôte":"Prêt"}/>;
       })}>
       <div className="waitingTableArt"><Coins size={32}/><h2>{poker?"Texas Hold’em":"Pile ou Face"}</h2>
-        <p>{snap.players.length} joueurs installés · {snap.maxPlayers} sièges</p>
+        <p>{seated.length} joueurs installés · {snap.maxPlayers} sièges</p>
         {poker&&<div className="bjRuleTags"><span>Petite blind {fmt(snap.minBet)}</span>
           <span>Grosse blind {fmt(Math.min(snap.maxBet,snap.minBet*2))}</span></div>}
       </div>

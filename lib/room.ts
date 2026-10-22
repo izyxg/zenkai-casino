@@ -1,4 +1,6 @@
-import { prisma } from "./prisma";
+import { prisma, withRoomMutation } from "./prisma";
+import {needsTurnRepair} from "./turn-progress";
+import {repairGameTurn} from "./game-recovery";
 import { hashToken } from "./auth";
 import { publicGameState } from "./game-engine";
 
@@ -14,7 +16,7 @@ export async function authenticatePlayer(roomCode:string, playerId:string, token
   return {room,player};
 }
 
-export async function roomSnapshot(code:string, viewerId:string){
+export async function roomSnapshot(code:string, viewerId:string,repair=true):Promise<any>{
   const room=await prisma.room.findUnique({
     where:{code:code.toUpperCase()},
     include:{
@@ -25,6 +27,13 @@ export async function roomSnapshot(code:string, viewerId:string){
   });
   if(!room) return null;
   const game=room.games[0] ?? null;
+  if(repair&&game?.status==="ACTIVE"&&needsTurnRepair(game.state as any)){
+    await withRoomMutation(room.id,async()=>{
+      const current=await prisma.game.findFirst({where:{roomId:room.id,status:"ACTIVE"},orderBy:{startedAt:"desc"}});
+      if(current) await repairGameTurn(current);
+    });
+    return roomSnapshot(code,viewerId,false);
+  }
   return {
     id:room.id,
     code:room.code,
@@ -43,6 +52,7 @@ export async function roomSnapshot(code:string, viewerId:string){
       balance:p.balance,
       currentBet:p.currentBet,
       isHost:p.isHost,
+      isSpectator:p.isSpectator??false,
       lastSeen:p.lastSeen
     })),
     game:game?{

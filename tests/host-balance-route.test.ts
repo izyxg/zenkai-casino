@@ -5,7 +5,7 @@ const mocks=vi.hoisted(()=>({
   room:vi.fn(),roomUpdate:vi.fn(),running:vi.fn(),target:vi.fn(),update:vi.fn(),ledger:vi.fn(),event:vi.fn()
 }));
 vi.mock("../lib/room",()=>({authenticatePlayer:mocks.authenticate,roomSnapshot:mocks.snapshot}));
-vi.mock("../lib/prisma",()=>({prisma:{game:{findFirst:mocks.active},$transaction:mocks.transaction}}));
+vi.mock("../lib/prisma",()=>({withRoomMutation:(_id:string,work:()=>unknown)=>work(),prisma:{game:{findFirst:mocks.active},$transaction:mocks.transaction}}));
 vi.mock("../lib/game-engine",()=>({
   blackjackAction:vi.fn(),blackjackDealerAction:vi.fn(),coinCommit:vi.fn(),logEvent:vi.fn(),
   pokerAction:vi.fn(),setBet:vi.fn(),startGame:vi.fn()

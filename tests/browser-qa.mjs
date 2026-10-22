@@ -27,6 +27,10 @@ try {
     if(route.request().method()==="POST") {
       const body=route.request().postDataJSON();actions.push(body);
       if(body.action==="SET_CAPACITY")snap.maxPlayers=body.payload.maxPlayers;
+      if(body.action==="SET_PARTICIPATION"){
+        const p=snap.players.find(p=>p.id===body.playerId);
+        p.isSpectator=body.payload.spectator;p.currentBet=0;
+      }
       await route.fulfill({json:{ok:true,snapshot:snap}});
     } else {
       inFlight++;maxInFlight=Math.max(maxInFlight,inFlight);
@@ -46,6 +50,23 @@ try {
   await page.getByRole("button",{name:"Confirmer",exact:true}).click();
   await page.waitForFunction(()=>!document.querySelector(".busyPill"));
   assert.equal(actions.at(-1).payload.move,"ALLIN");
+  await page.getByText("Débloquer la table",{exact:true}).click();
+  await page.getByRole("button",{name:"Réparer les tours",exact:true}).click();
+  await page.waitForFunction(()=>!document.querySelector(".busyPill"));
+  assert.equal(actions.at(-1).action,"RECOVER_GAME");assert.equal(actions.at(-1).payload.mode,"REPAIR");
+  assert.equal(actions.at(-1).payload.gameId,"g1");assert(actions.at(-1).payload.turnKey.startsWith("POKER:FLOP"));
+  page.once("dialog",dialog=>dialog.accept());
+  await page.getByRole("button",{name:"Passer Shinobi 1",exact:true}).click();
+  await page.waitForFunction(()=>!document.querySelector(".busyPill"));assert.equal(actions.at(-1).payload.mode,"SKIP");
+  page.once("dialog",dialog=>dialog.dismiss());
+  const cancellations=actions.filter(a=>a.payload?.mode==="CANCEL").length;
+  await page.getByRole("button",{name:"Annuler et rembourser",exact:true}).click();
+  assert.equal(actions.filter(a=>a.payload?.mode==="CANCEL").length,cancellations);
+  page.once("dialog",dialog=>dialog.accept());
+  await page.getByRole("button",{name:"Annuler et rembourser",exact:true}).click();
+  await page.waitForFunction(()=>!document.querySelector(".busyPill"));assert.equal(actions.at(-1).payload.mode,"CANCEL");
+  await page.getByText("Débloquer la table",{exact:true}).click();
+  report.push({scenario:"host recovery",repair:true,confirmedSkip:true,cancellationRequiresConsent:true,staleTurnGuardPayload:true});
   for(const size of [{width:1920,height:1080},{width:1366,height:768},{width:390,height:844}]) {
     await page.setViewportSize(size);
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
@@ -69,6 +90,13 @@ try {
     await page.screenshot({path:path.join(out,`poker-${size.width}.png`),fullPage:true});
     report.push({game:"POKER",viewport:size,seats:13,issues});
   }
+  const fullPoker=structuredClone(snap.game);
+  snap.game.state.seats=snap.game.state.seats.slice(0,6);
+  await page.setViewportSize({width:1366,height:768});await page.reload();await page.locator(".pokerExperience").waitFor();
+  await page.screenshot({path:path.join(out,"poker-six-seats.png"),fullPage:true});
+  assert.equal(await page.locator(".pokerSeat").count(),6);
+  report.push({game:"POKER",seats:6,largerCards:true});
+  snap.game=fullPoker;
   snap.gameType="BLACKJACK";
   snap.game={id:"bj1",status:"ACTIVE",state:{kind:"BLACKJACK",deck:[],dealer:["6S","??"],
     hands:Object.fromEntries(players.slice(1).map(p=>[p.id,{cards:["8S","8H"],bet:100,status:"PLAYING"}])),
@@ -109,8 +137,26 @@ try {
     await page.screenshot({path:path.join(out,`blackjack-${size.width}.png`),fullPage:true});
     report.push({game:"BLACKJACK",viewport:size,seats:12,issues});
   }
+  // A room member without a dealt hand remains a viewer, not an empty playing seat.
+  delete snap.game.state.hands.p12;snap.players[12].isSpectator=true;
+  await page.reload();await page.locator(".bjHandsGrid").waitFor();
+  assert.equal(await page.locator(".bjHandsGrid .cardTableSeat").count(),11);
+  assert.equal(await page.locator(".bjHandsGrid").getByText(players[12].name,{exact:true}).count(),0);
+  report.push({scenario:"blackjack spectator",notInTurnOrSeat:true});
+  // The host keeps recovery controls; ordinary members never receive them.
+  assert.equal(await page.locator(".recoveryTools").count(),0);
+  snap.game.status="FINISHED";snap.game.state.cancelled=true;snap.status="LOBBY";
+  await page.reload();await page.locator(".cancelledNotice").waitFor();
+  assert.equal(await page.locator(".bjActiveHouse").count(),0);
+  report.push({scenario:"cancelled hand",refundNotice:true,returnsToLobby:true});
   snap.game=null;snap.status="LOBBY";
   await page.reload();await page.locator(".bjBetForm").waitFor();
+  await page.getByRole("button",{name:"Passer spectateur",exact:true}).click();
+  await page.waitForFunction(()=>!document.querySelector(".busyPill"));
+  assert.equal(await page.locator(".bjBetForm").count(),0);
+  await page.getByRole("button",{name:"Participer à la prochaine manche",exact:true}).click();
+  await page.locator(".bjBetForm").waitFor();
+  report.push({scenario:"participation",spectatorCannotBet:true,canSitBackIn:true});
   await page.getByLabel("Votre mise",{exact:false}).fill("777");
   await page.getByRole("button",{name:"Confirmer",exact:true}).click();
   await page.waitForFunction(()=>!document.querySelector(".busyPill"));
@@ -155,6 +201,7 @@ try {
   assert(await page.getByLabel("Code du salon").isVisible());
   assert.equal(await page.getByRole("button",{name:"Rejoindre",exact:true}).getAttribute("aria-pressed"),"true");
   assert.equal(await page.getByLabel("Code créateur").count(),0);
+  assert(await page.getByRole("checkbox",{name:"Rejoindre en spectateur"}).isVisible());
   report.push({scenario:"join by default",passed:true});
   await page.getByRole("button",{name:"Créer une table",exact:true}).click();
   for(const size of [{width:1440,height:1000},{width:390,height:844}]) {

@@ -4,9 +4,10 @@ import type { PokerState } from "../game-types";
 import { changeBalance, logEvent } from "./shared";
 import { MAX_TABLE_PLAYERS } from "../table-limits";
 import {canReopenRaise} from "../poker-rules";
+import {validPokerSeat} from "../turn-progress";
 
 export async function newPokerState(room:any):Promise<PokerState>{
-  const eligible=room.players.filter((p:any)=>p.balance>=room.minBet);
+  const eligible=room.players.filter((p:any)=>!p.isSpectator&&p.balance>=room.minBet);
   if(eligible.length>MAX_TABLE_PLAYERS) throw new Error("La table de poker est limitée à 13 joueurs");
   if(eligible.length<2) throw new Error("Le poker nécessite au moins 2 joueurs avec assez de Ryôs");
   const deck=shuffle(freshDeck()), hole:Record<string,Card[]>={}; eligible.forEach((p:any)=>hole[p.id]=[deck.pop()!,deck.pop()!]);
@@ -49,6 +50,15 @@ export async function beginPokerHand(game:any,s:PokerState){
   if(able.length<=1&&(!able[0]||able[0].roundBet>=s.currentBet)) await advance(game,s);
 }
 
+export async function repairPokerTurn(game:any,s:PokerState){
+  for(const seat of s.seats) if(!validPokerSeat(s,seat.playerId)) seat.folded=true;
+  if(active(s).length===0) throw new Error("Aucune main valide. Annulez la manche pour rembourser les mises.");
+  const seat=s.seats[s.currentIndex];
+  if(!Number.isInteger(s.currentIndex)||s.currentIndex<0||s.currentIndex>=s.seats.length) s.currentIndex=s.seats.length-1;
+  if(!seat||seat.folded||seat.allIn||active(s).length===1) return advance(game,s);
+  await prisma.game.update({where:{id:game.id},data:{state:s as any}});
+}
+
 export async function pokerAction(gameId:string,playerId:string,action:"FOLD"|"CHECK"|"CALL"|"RAISE"|"ALLIN",amount?:number){
   const game=await prisma.game.findUniqueOrThrow({where:{id:gameId}});
   const s=game.state as unknown as PokerState;
@@ -56,7 +66,7 @@ export async function pokerAction(gameId:string,playerId:string,action:"FOLD"|"C
   if(!["FOLD","CHECK","CALL","RAISE","ALLIN"].includes(action)) throw new Error("Action de poker invalide");
 
   const seat=s.seats[s.currentIndex];
-  if(!seat||seat.playerId!==playerId||seat.folded||seat.allIn) throw new Error("Attends ton tour");
+  if(!seat||seat.playerId!==playerId||seat.folded||seat.allIn||!validPokerSeat(s,playerId)) throw new Error("Attends ton tour");
 
   const player=await prisma.player.findUniqueOrThrow({where:{id:playerId}});
   const toCall=Math.max(0,s.currentBet-seat.roundBet);

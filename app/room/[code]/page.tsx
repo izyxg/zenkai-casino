@@ -4,6 +4,9 @@ import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import GamePanel from "@/components/GamePanel";
 import CapacitySettings from "@/components/CapacitySettings";
+import RecoveryTools from "@/components/RecoveryTools";
+import {isHandParticipant} from "@/lib/turn-progress";
+import {Eye,UserRound} from "lucide-react";
 import {Check,Copy,LockKeyhole,LogOut,Pencil,RotateCcw,UnlockKeyhole,X} from "lucide-react";
 import {roomPollDelay} from "@/lib/polling";
 
@@ -176,7 +179,17 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
           </button>
         </div>
 
+        {snap.gameType!=="COINFLIP"&&<div className="participationBar">
+          <span>{(isActive?!isHandParticipant(snap.game.state,me.id):me.isSpectator)?<Eye size={16}/>:<UserRound size={16}/>}
+            {isActive&&!isHandParticipant(snap.game.state,me.id)?"Spectateur de cette manche":me.isSpectator?"Spectateur":"À la table"}</span>
+          <button disabled={busy||snap.status==="CLOSED"||isActive&&isHandParticipant(snap.game.state,me.id)}
+            onClick={()=>act("SET_PARTICIPATION",{spectator:!me.isSpectator})}>
+            {me.isSpectator?"Participer à la prochaine manche":"Passer spectateur"}</button>
+        </div>}
+        {snap.game?.state?.cancelled&&<p className="cancelledNotice" role="status">Manche annulée. Les mises engagées ont été remboursées.</p>}
         <GamePanel snap={snap} me={me} act={async (action,payload)=>{await act(action,payload);}} busy={busy||snap.status==="CLOSED"} error={error}/>
+        {me.isHost&&isActive&&<RecoveryTools game={snap.game} players={snap.players} busy={busy}
+          onRecover={payload=>act("RECOVER_GAME",payload)}/>}
 
         {me.isHost&&<section className="hostDeck">
           <div className="hostDeckTitle">
@@ -218,7 +231,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
                 <div className="railAvatar">{initials}<i className={online?"on":""}/></div>
                 <div className="railPlayerInfo">
                   <div><b>{p.name}</b>{p.isHost&&<span className="miniTag gold">HÔTE</span>}</div>
-                  <span>{p.currentBet>0?`${p.currentBet.toLocaleString("fr-FR")} Ryôs misés`:"Aucune mise"}</span>
+                  <span>{(isActive?!isHandParticipant(snap.game.state,p.id):p.isSpectator)?"Spectateur":p.currentBet>0?`${p.currentBet.toLocaleString("fr-FR")} Ryôs misés`:"À la table"}</span>
                 </div>
                 <div className="railBalance">{p.balance.toLocaleString("fr-FR")}<small>Ryôs</small></div>
                 {me.isHost&&<div className="railPlayerTools">

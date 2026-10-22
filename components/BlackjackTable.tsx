@@ -24,7 +24,7 @@ export default function BlackjackTable({snap,me,busy,error,act,onNext}:{
   const dealerScore=handTotal(s.dealer),myScore=mine?handTotal(mine.cards):null;
   const visibleScore=handTotal(s.dealer.filter((c:string)=>c!=="??"));
   const canDouble=turn&&mine?.cards.length===2&&me.balance>=mine.bet;
-  const players=snap.players.filter((p:any)=>!(s.dealerMode==="HOST"&&p.id===s.dealerPlayerId))
+  const players=snap.players.filter((p:any)=>!!s.hands[p.id])
     .sort((a:any,b:any)=>Number(b.id===me.id)-Number(a.id===me.id));
   const play=(move:"REVEAL"|"DRAW")=>{
     if(s.dealerAvailableCards) setChoice(move);

@@ -8,7 +8,8 @@ const fmt=(n:number)=>n.toLocaleString("fr-FR");
 export default function BlackjackLobby({snap,me,busy,act}:{snap:any;me:any;busy:boolean;act:(action:string,payload?:any)=>Promise<void>}) {
   const hostDealer=snap.blackjackDealerMode==="HOST";
   const isDealer=hostDealer&&me.isHost;
-  const players=snap.players.filter((p:any)=>!(hostDealer&&p.isHost));
+  const players=snap.players.filter((p:any)=>!p.isSpectator&&!(hostDealer&&p.isHost))
+    .sort((a:any,b:any)=>Number(b.id===me.id)-Number(a.id===me.id));
   const max=Math.min(snap.maxBet,me.balance);
   const [draft,setDraft]=useState(String(me.currentBet||snap.minBet));
   useEffect(()=>{setDraft(String(me.currentBet||snap.minBet));},[me.currentBet,snap.minBet]);
@@ -36,7 +37,7 @@ export default function BlackjackLobby({snap,me,busy,act}:{snap:any;me:any;busy:
       <button className={!hostDealer?"selected":""} disabled={busy} onClick={()=>act("SET_DEALER_MODE",{mode:"AUTO"})}>Maison automatique</button>
     </div>}
     <div className="bjLobbyConsole">
-      {!isDealer?<form className="bjBetForm" onSubmit={e=>{e.preventDefault();if(valid) void act("SET_BET",{bet});}}>
+      {!isDealer&&!me.isSpectator?<form className="bjBetForm" onSubmit={e=>{e.preventDefault();if(valid) void act("SET_BET",{bet});}}>
         <label htmlFor="blackjack-wager">Votre mise <small>{max<snap.minBet?"Solde insuffisant":fmt(snap.minBet)+" – "+fmt(max)+" Ryôs"}</small></label>
         <div className="bjBetControls">
           <button type="button" title="Diminuer la mise" aria-label="Diminuer la mise" disabled={busy||max<snap.minBet}
@@ -47,7 +48,8 @@ export default function BlackjackLobby({snap,me,busy,act}:{snap:any;me:any;busy:
           <button type="submit" className="bjConfirmBet" disabled={busy||!valid||me.currentBet===bet}><Check size={16}/>{me.currentBet===bet?"Confirmée":"Confirmer"}</button>
         </div>
         <div className="bjBetPresets">{presets.map(n=><button type="button" key={n} disabled={busy} onClick={()=>setDraft(String(n))}>{n===max?"Max":fmt(n)}</button>)}</div>
-      </form>:<div className="bjBankReady"><Coins size={24}/><div><b>Vous tenez la banque</b><span>{eligible.length}/{players.length} joueurs prêts</span></div></div>}
+      </form>:isDealer?<div className="bjBankReady"><Coins size={24}/><div><b>Vous tenez la banque</b><span>{eligible.length}/{players.length} joueurs prêts</span></div></div>:
+        <p className="bjWaiting">Vous observez la table.</p>}
       {me.isHost?<button className="bjDealButton" disabled={busy||!eligible.length} onClick={()=>act("START_GAME")}>
         Distribuer<ChevronRight size={18}/></button>:<p className="bjWaiting">En attente de la distribution par l’hôte</p>}
     </div>
