@@ -91,6 +91,27 @@
 .recoveryActions .danger{background:#3c2429;border-color:#7c5057;color:#f1bdba}
 .recoveryActions button:disabled{opacity:.4}
 .cancelledNotice{font-size:12px;color:#e7d4a3;border-left:2px solid #c0a36e;padding:10px 12px;background:#292b1d}
+.pokerGuide{font-size:12px;margin:0 4px 12px;color:#b8c7bc}
+.pokerGuide>summary{display:flex;align-items:center;gap:7px;cursor:pointer;width:fit-content;min-height:30px;color:#dfc78b}
+.pokerGuide>summary:focus-visible{outline:2px solid #91d8b4;outline-offset:3px}
+.pokerGuide[open]>summary>svg:last-child{rotate:180deg}
+.pokerGuideContent{border-block:1px solid #465547;padding:12px 0;margin-top:8px;max-width:760px}
+.pokerGuideContent>p{font-size:11px;line-height:1.65;margin:0 0 12px;color:#aabeb0}
+.pokerGuideContent>p:last-child{margin-bottom:0}
+.pokerGuide ol{list-style:none;margin:0 0 16px;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px}
+.pokerGuide li{display:flex;align-items:center;gap:8px;min-width:0;min-height:84px;border-bottom:1px solid #46554766;padding:10px 0}
+.handRank{color:#c4ab6d;font-size:10px;min-width:16px;text-align:center}
+.pokerGuide li>div:nth-child(2){min-width:0;flex:1;display:flex;flex-direction:column;gap:5px}
+.pokerGuide b{font-size:11px;color:#e7e8db}.pokerGuide small{font-size:10px;line-height:1.4;color:#a5b3a8}
+.guideCards{display:flex;gap:2px;flex-shrink:0}
+.guideCards .playingCard.mini{width:22px;height:32px;border-radius:3px;animation:none;box-shadow:0 2px 3px #0005}
+.guideCards .playingCard.mini .cardCorner{left:2px;top:2px}.guideCards .playingCard.mini .cardCorner b{font-size:9px;color:inherit}
+.guideCards .playingCard.mini .cardCorner span{font-size:6px;margin-top:2px}
+.guideCards .playingCard.mini .cardCorner.bottom{display:none}
+.guideCards .playingCard.mini .cardSuit{font-size:12px;left:60%;top:65%}
+.pokerPotBreakdown{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 22px;padding:8px 0;font-size:10px;color:#a8bbaa}
+.pokerPotBreakdown span{display:flex;align-items:center;gap:8px}.pokerPotBreakdown b{font-weight:600;color:#e5ce95}
+@media(max-width:760px){.pokerGuide ol{grid-template-columns:1fr}.pokerGuide li{min-height:70px}.guideCards .playingCard.mini{width:24px;height:34px}}
 .cardTableFrame:not(.crowded):not(.tableLobby){height:620px}
 .cardTableFrame:not(.crowded) .cardTableSeat:not(.vacant){height:150px}
 .cardTableFrame:not(.crowded) .tableSeatCards{--card-width:52px}

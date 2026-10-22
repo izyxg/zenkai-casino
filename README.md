@@ -61,6 +61,12 @@ Le polling est séquentiel : 900 ms après une réponse pendant une main, 1,8 s 
 - Pendant une manche, l'hôte dispose de **Débloquer la table** : vérifier les tours, faire rester un joueur au Blackjack / le coucher au poker, ou annuler et rembourser les mises engagées (y compris les doubles et les contributions des joueurs couchés).
 - Les interventions sont journalisées. Les actions d'une même table sont sérialisées dans une transaction PostgreSQL ; une confirmation devenue obsolète est refusée. Une annulation terminée ne peut pas être remboursée une seconde fois.
 
+## Poker
+
+À la création d'une table de poker, **Hôte spectateur** permet d'organiser les manches sans jouer. Les treize sièges concernent les participants, pas les observateurs. Le classement des mains est consultable avant et pendant les manches. Le poker se joue entre joueurs, sans banque ni commission.
+
+Les scénarios couverts et les limites de vérification sont détaillés dans [le rapport poker](docs/POKER-CHECKS.md).
+
 ## Sécurité / fair-play
 
 - Les tirages aléatoires utilisent `crypto.randomInt` côté serveur.

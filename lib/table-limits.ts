@@ -1,4 +1,9 @@
 export const MAX_TABLE_PLAYERS = 13;
+export const MAX_ROOM_MEMBERS = 64;
+
+export function occupiedSeats(players:Array<{isSpectator?:boolean}>){
+  return players.filter(p=>!p.isSpectator).length;
+}
 
 export function tableCapacity(gameType: string) {
   return gameType === "COINFLIP" ? 2 : MAX_TABLE_PLAYERS;

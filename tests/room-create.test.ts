@@ -21,6 +21,17 @@ function create(accessCode:string,extra:Record<string,unknown>={}){
 }
 
 describe("server-only table access codes",()=>{
+  it("creates a spectator host for poker without removing their management role",async()=>{
+    expect((await create("test-random-secret",{gameType:"POKER",hostSpectator:true})).status).toBe(200);
+    expect(mocks.create.mock.calls[0][0].data.players.create).toMatchObject({isHost:true,isSpectator:true});
+  });
+  it.each(["true",1,null])("rejects malformed host spectator flag %s",async hostSpectator=>{
+    expect((await create("test-random-secret",{gameType:"POKER",hostSpectator})).status).toBe(400);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+  it("does not enable spectator host mode in other games",async()=>{
+    expect((await create("test-random-secret",{gameType:"BLACKJACK",hostSpectator:true})).status).toBe(400);
+  });
   it.each(["BLACKJACK","POKER"])("creates a 13-seat %s table without silently trimming it",async gameType=>{
     expect((await create("test-random-secret",{gameType,maxPlayers:13})).status).toBe(200);
     expect(mocks.create.mock.calls[0][0].data.maxPlayers).toBe(13);

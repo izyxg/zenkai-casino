@@ -12,7 +12,7 @@ const errors=[],actions=[],report=[];
 const players=Array.from({length:13},(_,i)=>({id:"p"+i,name:i===12?"Nom de personnage très long":"Shinobi "+(i+1),
   balance:10000+i*100,currentBet:100,isHost:i===0,lastSeen:new Date().toISOString()}));
 const poker={id:"g1",status:"ACTIVE",state:{kind:"POKER",deck:[],board:["AS","KH","QD"],seats:players.map((p,i)=>({
-  playerId:p.id,roundBet:i===1?200:0,totalBet:i===1?200:100,folded:i===4,allIn:i===8})),
+  playerId:p.id,roundBet:i===1?200:0,totalBet:i===1?300:100,folded:i===4,allIn:i===8})),
   hole:Object.fromEntries(players.map((p,i)=>[p.id,i===0?["JS","TS"]:["??","??"]])),
   dealerIndex:2,currentIndex:0,stage:"FLOP",currentBet:200,minRaise:200,bigBlind:20,pot:1500,acted:[],handLabel:"Suite"}};
 const root={id:"r",code:"TEST01",gameType:"POKER",status:"ACTIVE",minBet:10,maxBet:10000,maxPlayers:13,
@@ -40,11 +40,22 @@ try {
   });
   await page.goto(base+"/room/TEST01",{timeout:180000});
   await page.locator(".pokerExperience").waitFor();
+  await page.getByText("Classement des mains",{exact:true}).click();
+  assert.equal(await page.locator(".pokerGuide li").count(),10);
+  for(const size of [{width:1366,height:768},{width:390,height:844}]){
+    await page.setViewportSize(size);
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+    await page.screenshot({path:path.join(out,`poker-guide-${size.width}.png`),fullPage:true});
+  }
+  await page.getByText("Classement des mains",{exact:true}).click();
+  report.push({scenario:"hand rankings",examples:10,desktopMobile:true});
   await page.getByRole("button",{name:"Pot",exact:true}).click();
   assert.equal(await page.getByLabel("Total de relance",{exact:true}).inputValue(),"1900");
   await page.getByRole("button",{name:"Relancer",exact:true}).click();
   await page.waitForFunction(()=>!document.querySelector(".busyPill"));
   assert.equal(actions.at(-1).payload.amount,1900);
+  assert.equal(actions.at(-1).payload.gameId,"g1");assert(actions.at(-1).payload.turnKey.startsWith("POKER:FLOP"));
   await page.getByRole("button",{name:"Tapis",exact:true}).click();
   assert.equal(actions.filter(a=>a.payload?.move==="ALLIN").length,0);
   await page.getByRole("button",{name:"Confirmer",exact:true}).click();
@@ -91,6 +102,23 @@ try {
     report.push({game:"POKER",viewport:size,seats:13,issues});
   }
   const fullPoker=structuredClone(snap.game);
+  const fullPlayers=structuredClone(snap.players);
+  snap.players=snap.players.map(p=>({...p,isHost:false}));
+  snap.players.unshift({id:"observer",name:"Hôte spectateur",balance:77777,currentBet:0,isHost:true,isSpectator:true,lastSeen:new Date().toISOString()});
+  snap.game.state.hole=Object.fromEntries(snap.game.state.seats.map(p=>[p.playerId,["??","??"]]));
+  await page.evaluate(()=>localStorage.setItem("zenkai-casino:TEST01",JSON.stringify({playerId:"observer",sessionToken:"fixture-only"})));
+  await page.reload();await page.locator(".pokerExperience").waitFor();
+  assert.equal(await page.locator(".pokerSeat").count(),13);
+  assert.equal(await page.locator(".pokerMainActions").count(),0);
+  assert(await page.locator(".recoveryTools").isVisible());
+  assert.equal(await page.locator(".pokerSeat.mine").count(),0);
+  await page.screenshot({path:path.join(out,"poker-host-spectator.png"),fullPage:true});
+  snap.game=null;snap.status="LOBBY";
+  await page.reload();await page.getByRole("button",{name:"Distribuer les cartes",exact:true}).waitFor();
+  assert(await page.getByRole("button",{name:"Distribuer les cartes",exact:true}).isEnabled());
+  report.push({scenario:"spectator host",playingSeats:13,receivesNoHand:true,canStartAndManage:true});
+  snap.players=fullPlayers;snap.game=structuredClone(fullPoker);snap.status="ACTIVE";
+  await page.evaluate(()=>localStorage.setItem("zenkai-casino:TEST01",JSON.stringify({playerId:"p0",sessionToken:"fixture-only"})));
   snap.game.state.seats=snap.game.state.seats.slice(0,6);
   await page.setViewportSize({width:1366,height:768});await page.reload();await page.locator(".pokerExperience").waitFor();
   await page.screenshot({path:path.join(out,"poker-six-seats.png"),fullPage:true});
@@ -212,6 +240,18 @@ try {
     await page.screenshot({path:path.join(out,`home-${size.width}.png`),fullPage:true});
     report.push({scenario:"home",viewport:size});
   }
+  await page.getByRole("button",{name:"Texas Hold’em",exact:false}).click();
+  await page.getByRole("checkbox",{name:"Hôte spectateur",exact:true}).check();
+  await page.getByLabel("Petite blind",{exact:true}).fill("75");
+  assert.equal(await page.getByLabel("Grosse blind",{exact:true}).inputValue(),"150");
+  let creation;
+  await page.route("**/api/rooms",async route=>{creation=route.request().postDataJSON();await route.fulfill({status:400,json:{error:"Validation de formulaire locale"}});});
+  await page.getByLabel("Nom du joueur",{exact:true}).fill("Organisateur");
+  await page.getByLabel("Code créateur",{exact:true}).fill("fixture-only-not-a-real-code");
+  await page.getByRole("button",{name:"Ouvrir la table",exact:true}).click();
+  await page.locator(".homeError").waitFor();
+  assert.equal(creation.hostSpectator,true);assert.equal(creation.gameType,"POKER");assert.equal(creation.maxBet,"150");
+  report.push({scenario:"create as spectator",booleanHostFlag:true,blinds:[75,150]});
   await page.getByRole("button",{name:"Rejoindre",exact:true}).click();
   assert(await page.getByLabel("Code du salon").isVisible());
   await page.screenshot({path:path.join(out,"join-mobile.png"),fullPage:true});

@@ -7,6 +7,7 @@ import CapacitySettings from "@/components/CapacitySettings";
 import RecoveryTools from "@/components/RecoveryTools";
 import {isHandParticipant} from "@/lib/turn-progress";
 import {Eye,UserRound} from "lucide-react";
+import {occupiedSeats} from "@/lib/table-limits";
 import {Check,Copy,LockKeyhole,LogOut,Pencil,RotateCcw,UnlockKeyhole,X} from "lucide-react";
 import {roomPollDelay} from "@/lib/polling";
 
@@ -170,7 +171,8 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
         <div className="tableToolbar">
           <div className="tableMeta">
             <span><i className="onlineDot"/>{activeCount} en ligne</span>
-            <span>{snap.players.length}/{snap.maxPlayers} sièges</span>
+            <span>{occupiedSeats(snap.players)}/{snap.maxPlayers} sièges</span>
+            {snap.players.some((p:any)=>p.isSpectator)&&<span>{snap.players.filter((p:any)=>p.isSpectator).length} spectateur(s)</span>}
             <span>{snap.locked?"Salon verrouillé":"Salon ouvert"}</span>
             {snap.gameType==="BLACKJACK"&&<span>{snap.blackjackDealerMode==="HOST"?"Croupier : hôte":"Croupier : maison"}</span>}
           </div>
@@ -182,7 +184,8 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
         {snap.gameType!=="COINFLIP"&&<div className="participationBar">
           <span>{(isActive?!isHandParticipant(snap.game.state,me.id):me.isSpectator)?<Eye size={16}/>:<UserRound size={16}/>}
             {isActive&&!isHandParticipant(snap.game.state,me.id)?"Spectateur de cette manche":me.isSpectator?"Spectateur":"À la table"}</span>
-          <button disabled={busy||snap.status==="CLOSED"||isActive&&isHandParticipant(snap.game.state,me.id)}
+          <button disabled={busy||snap.status==="CLOSED"||isActive&&isHandParticipant(snap.game.state,me.id)||me.isSpectator&&occupiedSeats(snap.players)>=snap.maxPlayers}
+            title={me.isSpectator&&occupiedSeats(snap.players)>=snap.maxPlayers?"Tous les sièges sont occupés":"Changer de participation entre les manches"}
             onClick={()=>act("SET_PARTICIPATION",{spectator:!me.isSpectator})}>
             {me.isSpectator?"Participer à la prochaine manche":"Passer spectateur"}</button>
         </div>}
@@ -210,7 +213,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
               <div><b>Fermer le salon</b><small>Mettre fin à cette table</small></div>
             </button>
           </div>
-          <CapacitySettings gameType={snap.gameType} capacity={snap.maxPlayers} occupied={snap.players.length}
+          <CapacitySettings gameType={snap.gameType} capacity={snap.maxPlayers} occupied={occupiedSeats(snap.players)}
             disabled={busy||isActive||snap.status==="CLOSED"} onSave={maxPlayers=>{void act("SET_CAPACITY",{maxPlayers});}}/>
         </section>}
       </section>
@@ -222,7 +225,7 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
         </div>
 
         {railTab==="players"?<div className="railContent playerRail">
-          <div className="railSectionTitle"><span>TABLE</span><small>{snap.players.length}/{snap.maxPlayers}</small></div>
+          <div className="railSectionTitle"><span>TABLE</span><small>{occupiedSeats(snap.players)}/{snap.maxPlayers}</small></div>
           <div className="playerList">
             {snap.players.map((p:any)=>{
               const online=Date.now()-new Date(p.lastSeen).getTime()<10000;
@@ -268,8 +271,8 @@ export default function RoomPage({params}:{params:Promise<{code:string}>}){
           </div>
 
           <div className="roomLimits">
-            <div><span>Mise min</span><b>{snap.minBet.toLocaleString("fr-FR")}</b></div>
-            <div><span>Mise max</span><b>{snap.maxBet.toLocaleString("fr-FR")}</b></div>
+            <div><span>{snap.gameType==="POKER"?"Petite blind":"Mise min"}</span><b>{snap.minBet.toLocaleString("fr-FR")}</b></div>
+            <div><span>{snap.gameType==="POKER"?"Grosse blind":"Mise max"}</span><b>{(snap.gameType==="POKER"?snap.minBet*2:snap.maxBet).toLocaleString("fr-FR")}</b></div>
             <div><span>Départ</span><b>{snap.startingBalance.toLocaleString("fr-FR")}</b></div>
           </div>
         </div>:<div className="railContent logRail">

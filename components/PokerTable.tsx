@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Check, ChevronRight, CircleDollarSign, Flag, Layers3, Minus, Plus, X } from "lucide-react";
 import { CardView } from "./CardView";
 import { CardTable, TablePlayer } from "./CardTable";
+import PokerGuide from "./PokerGuide";
+import {turnKey} from "@/lib/turn-progress";
 import { pokerControls, pokerPositions, pokerPots } from "@/lib/poker-view";
 import type { PokerState } from "@/lib/game-types";
 
@@ -27,6 +29,7 @@ export default function PokerTable({state:s,players,me,gameId,finished,busy,onAc
   const raise=Number(amount);
   const validRaise=/^\d+$/.test(amount)&&Number.isSafeInteger(raise)&&raise>=minRaise&&raise<=maxRaise;
   const ownCards=s.hole[me.id]??[];
+  const play=(payload:any)=>onAction("POKER",{...payload,gameId,turnKey:turnKey(s)});
   const playerMap=new Map(players.map(p=>[p.id,p]));
   const pots=pokerPots(s);
   const myIndex=Math.max(0,s.seats.findIndex(seat=>seat.playerId===me.id));
@@ -46,6 +49,7 @@ export default function PokerTable({state:s,players,me,gameId,finished,busy,onAc
       <div className={`pokerTurn ${turn?"yours":""}`} role="status"><i/>
         {finished?"Main terminée":turn?"À vous de jouer":activeName+" joue"}</div>
     </header>
+    <PokerGuide/>
     <CardTable className="pokerArena" label="Tapis de poker" seats={tableSeats}>
       <div className="pokerBoard">
         <ol className="pokerStreets" aria-label="Avancement de la main">{stages.map((stage,i)=>
@@ -58,10 +62,11 @@ export default function PokerTable({state:s,players,me,gameId,finished,busy,onAc
         </div>
         <div className="pokerBoardMeta"><span><Layers3 size={14}/>{s.seats.filter(p=>!p.folded).length} en jeu</span>
           <span>Mise à suivre <b>{fmt(s.currentBet)}</b></span>
-          {pots.length>1&&<span title={pots.map((pot,i)=>(i===0?"Principal":"Annexe "+i)+": "+fmt(pot)).join(" / ")}>{pots.length} tranches de pot</span>}
+          {pots.length>1&&<span title={pots.map((pot,i)=>(i===0?"Principal":"Annexe "+i)+": "+fmt(pot)).join(" / ")}>{pots.length} pots</span>}
         </div>
       </div>
     </CardTable>
+    {pots.length>1&&<div className="pokerPotBreakdown" aria-label="Répartition des pots">{pots.map((pot,i)=><span key={i}>{i===0?"Pot principal":"Pot annexe "+i}<b>{fmt(pot)} Ryôs</b></span>)}</div>}
     {!!s.winners?.length&&<div className="pokerWinners" role="status"><Flag size={20}/>
       <div>{s.winners.map(w=><p key={w.playerId}><b>{playerMap.get(w.playerId)?.name??"Joueur"}</b>
         <span>{w.label}</span><strong>+{fmt(w.amount)} Ryôs</strong></p>)}</div></div>}
@@ -71,14 +76,14 @@ export default function PokerTable({state:s,players,me,gameId,finished,busy,onAc
           <small>Solde : {fmt(me.balance)} Ryôs</small></div></div>
       {turn?<div className="pokerDecision">
         <div className="pokerMainActions">
-          <button className="pokerFold" disabled={busy} onClick={()=>onAction("POKER",{move:"FOLD"})}><X size={16}/>Se coucher</button>
-          <button className="pokerCall" disabled={busy} onClick={()=>onAction("POKER",{move:call>0?"CALL":"CHECK"})}>
+          <button className="pokerFold" disabled={busy} onClick={()=>play({move:"FOLD"})}><X size={16}/>Se coucher</button>
+          <button className="pokerCall" disabled={busy} onClick={()=>play({move:call>0?"CALL":"CHECK"})}>
             <Check size={18}/>{call>0?"Suivre "+fmt(callPayment)+(callPayment<call?" · tapis":""):"Parole"}</button>
           <button className="pokerAllIn" disabled={busy||!canAllIn} onClick={()=>setConfirmAllIn(v=>!v)}><CircleDollarSign size={18}/>Tapis</button>
         </div>
         {confirmAllIn?<div className="pokerAllInConfirm" role="group" aria-label="Confirmer le tapis">
           <span>Engager vos {fmt(me.balance)} Ryôs restants ?</span>
-          <button disabled={busy||!turn} onClick={()=>{setConfirmAllIn(false);void onAction("POKER",{move:"ALLIN"});}}>Confirmer</button>
+          <button disabled={busy||!turn} onClick={()=>{setConfirmAllIn(false);void play({move:"ALLIN"});}}>Confirmer</button>
           <button title="Annuler le tapis" aria-label="Annuler le tapis" onClick={()=>setConfirmAllIn(false)}><X size={16}/></button>
         </div>:<div className="pokerRaise">
           <div className="raiseSizing">{controls.presets.map(p=><button key={p.label} disabled={busy||!canRaise}
@@ -91,7 +96,7 @@ export default function PokerTable({state:s,players,me,gameId,finished,busy,onAc
           </div></label>
           <input aria-label="Montant de relance" type="range" min={Math.min(minRaise,maxRaise)} max={maxRaise}
             value={validRaise?raise:Math.min(minRaise,maxRaise)} step={1} disabled={busy||!canRaise} onChange={e=>setAmount(e.target.value)}/>
-          <button className="pokerRaiseSubmit" disabled={busy||!canRaise||!validRaise} onClick={()=>onAction("POKER",{move:"RAISE",amount:raise})}>
+          <button className="pokerRaiseSubmit" disabled={busy||!canRaise||!validRaise} onClick={()=>play({move:"RAISE",amount:raise})}>
             Relancer<ChevronRight size={16}/></button>
         </div>}
       </div>:<div className="pokerWaiting" role="status">{finished?"Main terminée":mine?.folded?"En attente de la prochaine main":mine?.allIn?"Tapis engagé · la main continue":mine?"Au tour de "+activeName:"Vous pourrez jouer à la prochaine main"}</div>}

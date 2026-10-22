@@ -10,13 +10,16 @@ const schema=z.object({
   accessCode:z.string().min(1).max(128),
   name:z.string().trim().min(2).max(24),
   gameType:z.enum(["COINFLIP","BLACKJACK","POKER"]),
-  minBet:z.coerce.number().int().min(1),
-  maxBet:z.coerce.number().int().min(1),
+  minBet:z.coerce.number().int().min(1).max(1000000000),
+  maxBet:z.coerce.number().int().min(1).max(1000000000),
   maxPlayers:z.coerce.number().int().min(2).max(MAX_TABLE_PLAYERS),
-  startingBalance:z.coerce.number().int().min(100),
-  blackjackDealerMode:z.enum(["AUTO","HOST"]).optional().default("AUTO")
+  startingBalance:z.coerce.number().int().min(100).max(1000000000),
+  blackjackDealerMode:z.enum(["AUTO","HOST"]).optional().default("AUTO"),
+  hostSpectator:z.boolean().optional().default(false)
 })
-  .refine(x=>x.maxBet>=x.minBet,{message:"La mise max doit être supérieure à la mise min"});
+  .refine(x=>x.maxBet>=x.minBet,{message:"La mise max doit être supérieure à la mise min"})
+  .refine(x=>x.gameType!=="POKER"||x.minBet<=500000000&&x.startingBalance*x.maxPlayers<=2000000000,{message:"Le capital total du poker doit rester inférieur ou égal à 2 milliards de Ryôs"})
+  .refine(x=>!x.hostSpectator||x.gameType==="POKER",{message:"Hôte spectateur disponible au poker uniquement"});
 
 export async function POST(req:Request){
   try{
@@ -75,7 +78,8 @@ export async function POST(req:Request){
             name,
             sessionHash:hashToken(token),
             balance:startingBalance,
-            isHost:true
+            isHost:true,
+            isSpectator:raw.hostSpectator
           }
         }
       },

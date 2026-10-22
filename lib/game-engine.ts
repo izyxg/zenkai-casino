@@ -69,7 +69,7 @@ export async function startGame(roomId:string,hostId:string){
       ?newCoinState()
       :room.gameType==="BLACKJACK"
         ?await newBlackjackState(room)
-        :await newPokerState({...room,previousDealerId});
+        :await newPokerState({...room,previousDealerId,previousPlayerOrder:previousState?.seats?.map(s=>s.playerId)});
 
   const game=await prisma.game.create({
     data:{roomId,type:room.gameType,status:"ACTIVE",state:state as any}

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { authenticatePlayer, roomSnapshot } from "@/lib/room";
 import { prisma, withRoomMutation } from "@/lib/prisma";
 import {recoverGame} from "@/lib/game-recovery";
-import {isHandParticipant} from "@/lib/turn-progress";
-import { validateCapacity } from "@/lib/table-limits";
+import {isHandParticipant,turnKey} from "@/lib/turn-progress";
+import { occupiedSeats,validateCapacity } from "@/lib/table-limits";
 import {
   blackjackAction,
   blackjackDealerAction,
@@ -35,6 +35,7 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
       if(room.gameType==="COINFLIP") throw new Error("Ce jeu nécessite deux participants");
       if(typeof payload.spectator!=="boolean") throw new Error("Mode invalide");
       if(active&&isHandParticipant(active.state as any,player.id)) throw new Error("Termine ta manche avant de changer de place");
+      if(!payload.spectator&&player.isSpectator&&occupiedSeats(room.players)>=room.maxPlayers) throw new Error("Tous les sièges sont occupés");
       await prisma.player.update({where:{id:player.id},data:{isSpectator:payload.spectator,currentBet:0}});
       await logEvent(room.id,"PARTICIPATION",`${player.name} ${payload.spectator?"passe spectateur":"prend place pour la prochaine manche"}.`);
     }else if(action==="SET_BET"){
@@ -63,6 +64,7 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
       await blackjackDealerAction(active.id,player.id,payload.move,payload.card);
     }else if(action==="POKER"){
       if(!active) throw new Error("Aucune partie active");
+      if(payload.gameId!==active.id||payload.turnKey!==turnKey(active.state as any)) throw new Error("Le tour a changé. Actualise la table avant de jouer.");
       await pokerAction(active.id,player.id,payload.move,payload.amount?Number(payload.amount):undefined);
     }else if(action==="LOCK"){
       if(!player.isHost) throw new Error("Hôte uniquement");
@@ -116,7 +118,7 @@ export async function POST(req:Request,{params}:{params:Promise<{code:string}>})
       if(!player.isHost) throw new Error("Hôte uniquement");
       if(room.status==="CLOSED"||active) throw new Error("La capacité se règle entre les manches");
       await prisma.$transaction(async tx=>{
-        const current=await tx.room.findUniqueOrThrow({where:{id:room.id},include:{_count:{select:{players:true}}}});
+        const current=await tx.room.findUniqueOrThrow({where:{id:room.id},include:{_count:{select:{players:{where:{isSpectator:false}}}}}});
         if(current.status!=="LOBBY") throw new Error("La capacité se règle entre les manches");
         const maxPlayers=validateCapacity(current.gameType,payload.maxPlayers,current._count.players);
         await tx.room.update({where:{id:room.id},data:{maxPlayers}});

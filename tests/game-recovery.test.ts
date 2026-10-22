@@ -62,12 +62,13 @@ it("allows the host to make a blocked blackjack player stand without extra cards
 it("folds a blocked poker hand using the normal pot settlement",async()=>{
   game.state=poker();await request("SKIP");
   expect(game.state.seats[0].folded).toBe(true);expect(game.status).toBe("FINISHED");
-  expect(m.pay).toHaveBeenCalledWith("room","p2",30,"WIN",expect.any(String));
+  expect(m.pay).toHaveBeenCalledWith("room","p2",10,"REFUND",expect.any(String));
+  expect(m.pay).toHaveBeenCalledWith("room","p2",20,"WIN",expect.any(String));
 });
 it("repairs a poker spectator with no cards and preserves contributed chips",async()=>{
   game.state=poker();game.state.hole.p1=undefined;
   await repairGameTurn(game);expect(game.status).toBe("FINISHED");
-  expect(game.state.winners[0].amount).toBe(30);
+  expect(game.state.winners[0].amount).toBe(20);expect(wallets.p2).toBe(930);
 });
 it("refunds all blackjack stakes including doubled bets exactly once",async()=>{
   game.state.hands.p1.bet=200;game.state.hands.p1.doubled=true;

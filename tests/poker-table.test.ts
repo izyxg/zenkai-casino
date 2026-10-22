@@ -7,6 +7,7 @@ import {newPokerState,pokerAction,beginPokerHand} from "../lib/games/poker";
 import {publicGameState} from "../lib/game-engine";
 import {pokerControls,pokerPositions} from "../lib/poker-view";
 import {canReopenRaise} from "../lib/poker-rules";
+import {turnKey} from "../lib/turn-progress";
 let wallets:Record<string,number>,game:any;
 beforeEach(()=>{
   vi.resetAllMocks();wallets={};game={id:"g",roomId:"r",status:"ACTIVE"};
@@ -87,4 +88,9 @@ it("does not reveal folded hands or an uncontested winner's cards",async()=>{
   s.board=s.deck.splice(0,5);
   const view=publicGameState(s,"p0") as PokerState;
   expect(view.hole.p1).toEqual(["??","??"]);expect(view.hole.p2).toEqual(s.hole.p2);
+});
+it("keeps the turn token identical after hiding cards from an observer",async()=>{
+  const s=await newPokerState(room(4));s.board=s.deck.splice(0,3);s.stage="FLOP";
+  expect(turnKey(publicGameState(s,"spectator"))).toBe(turnKey(s));
+  expect(turnKey(publicGameState(s,"p1"))).toBe(turnKey(s));
 });

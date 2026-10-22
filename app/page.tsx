@@ -16,6 +16,7 @@ export default function Home() {
   const [mode,setMode]=useState<"create"|"join">("join");
   const [gameType,setGameType]=useState<GameType>("BLACKJACK");
   const [capacity,setCapacity]=useState("6");
+  const [minimum,setMinimum]=useState("100");
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const selected=games.find(g=>g.id===gameType)!;
@@ -27,7 +28,8 @@ export default function Home() {
     try{
       const response=await fetch(mode==="create"?"/api/rooms":"/api/rooms/join",{
         method:"POST",headers:{"content-type":"application/json"},
-        body:JSON.stringify(mode==="create"?{...fields,gameType,maxPlayers:gameType==="COINFLIP"?2:capacity}:
+        body:JSON.stringify(mode==="create"?{...fields,gameType,maxPlayers:gameType==="COINFLIP"?2:capacity,
+          hostSpectator:gameType==="POKER"&&fields.hostSpectator==="on"}:
           {...fields,...(fields.spectator==="on"?{spectator:true}:{})})
       });
       const data=await response.json();
@@ -64,15 +66,17 @@ export default function Home() {
           {mode==="create"?<>
             <div className="field full"><label htmlFor="creator-code">Code créateur</label>
               <input id="creator-code" name="accessCode" type="password" placeholder="Code privé" maxLength={128} autoComplete="off" required disabled={busy}/></div>
-            <div className="field"><label htmlFor="min-bet">Mise minimum</label><div className="moneyInput">
-              <input id="min-bet" name="minBet" type="number" min={1} max={1000000000} step={1} defaultValue={100} required disabled={busy}/><span>Ryôs</span></div></div>
-            <div className="field"><label htmlFor="max-bet">Mise maximum</label><div className="moneyInput">
-              <input id="max-bet" name="maxBet" type="number" min={1} max={1000000000} step={1} defaultValue={10000} required disabled={busy}/><span>Ryôs</span></div></div>
+            <div className="field"><label htmlFor="min-bet">{gameType==="POKER"?"Petite blind":"Mise minimum"}</label><div className="moneyInput">
+              <input id="min-bet" name="minBet" type="number" min={1} max={gameType==="POKER"?500000000:1000000000} step={1} value={minimum} onChange={e=>setMinimum(e.target.value)} required disabled={busy}/><span>Ryôs</span></div></div>
+            <div className="field"><label htmlFor="max-bet">{gameType==="POKER"?"Grosse blind":"Mise maximum"}</label><div className="moneyInput">
+              {gameType==="POKER"?<input id="max-bet" name="maxBet" type="number" readOnly value={Number(minimum)*2}/>:
+                <input id="max-bet" name="maxBet" type="number" min={1} max={1000000000} step={1} defaultValue={10000} required disabled={busy}/>}<span>Ryôs</span></div></div>
             <div className="field"><label htmlFor="max-players">Nombre de places</label>
               <input id="max-players" type="number" min={2} max={13} step={1} value={gameType==="COINFLIP"?"2":capacity}
                 onChange={e=>setCapacity(e.target.value)} required disabled={busy||gameType==="COINFLIP"}/></div>
             <div className="field"><label htmlFor="starting-balance">Solde de départ</label><div className="moneyInput">
-              <input id="starting-balance" name="startingBalance" type="number" min={100} max={1000000000} step={1} defaultValue={10000} required disabled={busy}/><span>Ryôs</span></div></div>
+              <input id="starting-balance" name="startingBalance" type="number" min={100} max={gameType==="POKER"?Math.floor(2000000000/Math.max(2,Number(capacity)||2)):1000000000} step={1} defaultValue={10000} required disabled={busy}/><span>Ryôs</span></div></div>
+            {gameType==="POKER"&&<label className="homeSpectator"><input type="checkbox" name="hostSpectator" disabled={busy}/>Hôte spectateur</label>}
             {gameType==="BLACKJACK"&&<fieldset className="homeDealerChoice"><legend>Croupier</legend>
               <label><input type="radio" name="blackjackDealerMode" value="HOST" defaultChecked disabled={busy}/>Hôte</label>
               <label><input type="radio" name="blackjackDealerMode" value="AUTO" disabled={busy}/>Maison automatique</label></fieldset>}

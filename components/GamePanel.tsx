@@ -7,6 +7,7 @@ import PokerTable from "./PokerTable";
 import BlackjackTable from "./BlackjackTable";
 import BlackjackLobby from "./BlackjackLobby";
 import {CardTable,TablePlayer} from "./CardTable";
+import PokerGuide from "./PokerGuide";
 
 const fmt=(n:number)=>Number(n||0).toLocaleString("fr-FR");
 type Props={snap:any;me:any;act:(action:string,payload?:any)=>Promise<void>;error?:string;busy?:boolean};
@@ -23,20 +24,21 @@ export default function GamePanel({snap,me,act,error="",busy=false}:Props) {
     if(snap.gameType==="BLACKJACK") return <BlackjackLobby snap={snap} me={me} busy={busy} act={act}/>;
     const poker=snap.gameType==="POKER";
     const seated=snap.players.filter((p:any)=>!p.isSpectator);
-    const eligible=seated.filter((p:any)=>p.balance>=snap.minBet);
+    const eligible=seated.filter((p:any)=>poker?p.balance>0:p.balance>=snap.minBet);
     const canStart=poker?eligible.length>=2:snap.players.length===2;
     return <section className="tableWaiting">
       <header className="pokerHeading"><div><span className="eyebrow">LE CERCLE DU RYÔ</span>
         <h1>{poker?"Texas Hold’em":"Pile ou Face"}</h1></div><span className="pokerTurn"><i/>Table ouverte</span></header>
+      {poker&&<PokerGuide/>}
       <CardTable className="tableLobby" label={poker?"Tapis de poker":"Table de duel"} seats={Array.from({length:Math.max(seated.length,Math.min(poker?6:2,snap.maxPlayers))},(_,i)=>{
         const p=seated[i];
         return <TablePlayer key={p?.id??"empty"+i} name={p?.name} balance={p?.balance} isMe={p?.id===me.id}
-          status={poker&&p?.balance<snap.minBet?"Solde insuffisant":p?.isHost?"Hôte":"Prêt"}/>;
+          status={poker&&p?.balance<=0?"Solde insuffisant":p?.isHost?"Hôte":"Prêt"}/>;
       })}>
       <div className="waitingTableArt"><Coins size={32}/><h2>{poker?"Texas Hold’em":"Pile ou Face"}</h2>
         <p>{seated.length} joueurs installés · {snap.maxPlayers} sièges</p>
         {poker&&<div className="bjRuleTags"><span>Petite blind {fmt(snap.minBet)}</span>
-          <span>Grosse blind {fmt(Math.min(snap.maxBet,snap.minBet*2))}</span></div>}
+          <span>Grosse blind {fmt(snap.minBet*2)}</span><span>No-limit</span></div>}
       </div>
       </CardTable>
       <div className="waitingTableFooter">{me.isHost?<button className="bjDealButton" disabled={busy||!canStart}
